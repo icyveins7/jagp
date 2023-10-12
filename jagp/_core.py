@@ -16,7 +16,44 @@ txt = header_template.render(all_numBits_zero=True)
 print(txt)
 print("==========================")
 
-specheader_template = environment.get_template("SpecHeader.h")
-txt = specheader_template.render()
-print(txt)
+specheader_template = environment.get_template("SpecificHeader.h")
+specheaders = [
+    {
+        'name': 'HeaderA',
+        'usesExtraBits': True,
+        'numBytes': 1,
+        'numExtraBits': 2,
+        'fields': [
+            {
+                'name': 'fieldA',
+                'type': 'uint8_t',
+            },
+            {
+                'name': 'fieldB',
+                'type': 'uint16_t'
+            }
+        ]
+    },
+    {
+        'name': 'HeaderB',
+        'usesExtraBits': False,
+        'numBytes': 1,
+        'numExtraBits': 0,
+        'fields': [
+            {
+                'name': 'fieldA',
+                'type': 'float',
+            },
+            {
+                'name': 'fieldB',
+                'type': 'int32_t'
+            }
+        ]
+    }
+]
+
+for header in specheaders:
+    txt = specheader_template.render(header=header)
+    print(txt)
+    print("========================================")
 
