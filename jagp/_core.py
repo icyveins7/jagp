@@ -27,10 +27,16 @@ specheaders = [
             {
                 'name': 'fieldA',
                 'type': 'uint8_t',
+                'byte_offset': 0,
+                'bit_offset': 0,
+                'size': 2,
             },
             {
                 'name': 'fieldB',
-                'type': 'uint16_t'
+                'type': 'uint8_t',
+                'byte_offset': 0,
+                'bit_offset': 2,
+                'size': 6
             }
         ]
     },
@@ -43,10 +49,28 @@ specheaders = [
             {
                 'name': 'fieldA',
                 'type': 'float',
+                'byte_offset': 0,
+                'size': 32
             },
             {
                 'name': 'fieldB',
-                'type': 'int32_t'
+                'type': 'int32_t',
+                'byte_offset': 4,
+                'size': 32
+            },
+            {
+                'name': 'fieldC',
+                'type': 'uint8_t',
+                'byte_offset': 8,
+                'bit_offset': 0,
+                'size': 1
+            },
+            {
+                'name': 'fieldD',
+                'type': 'uint8_t',
+                'byte_offset': 8,
+                'bit_offset': 1,
+                'size': 7
             }
         ]
     }
