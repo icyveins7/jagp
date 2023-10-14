@@ -7,27 +7,23 @@
 class {{ header.name }} : public Header
 {
 public:
-    {% if header.usesExtraBits %}
-    {{ header.name }}()
-        : Header({{ header.numBytes }}, {{ header.numExtraBits }})
-    {
-    }
-    {% else %}
     {{ header.name }}()
         : Header({{ header.numBytes }})
     {
     }
-    {% endif %}
 
     {% for field in header.fields %}
-    {{ field.type }} get{{ field.name }}(){ return {{ field.name }}; }
-    void set{{ field.name }}({{ field.type }} value){ {{ field.name }} = value; }
+    /// @brief Gets the {{loop.index}}/{{loop.length}} field: {{field.name}}
+    {{ field.type }} get_{{ field.name }}(){ return m_{{ field.name }}; }
+    /// @brief Sets the {{loop.index}}/{{loop.length}} field: {{field.name}}
+    void set_{{ field.name }}({{ field.type }} value){ m_{{ field.name }} = value; }
+
     {% endfor %}
 
-    virtual uint8_t* write(uint8_t *buf, size_t &bufbitslen) override
+    virtual void write(uint8_t *buf, size_t buflen) override
     {
         // Check if the buffer is large enough to write the header
-        if (buflen < (m_numBytes * 8{% if header.usesExtraBits %} + m_numExtraBits{% endif %}))
+        if (buflen < m_numBytes)
             throw std::out_of_range("{{ header.name }}: Buffer is too small");
 
         // Write each field
@@ -37,15 +33,22 @@ public:
         std::memcpy(&buf[{{ field.byte_offset }}], &m_{{ field.name }}, sizeof({{ field.type }}));
         {# Handle bit offsets #}
         {% else %}
-        buf[{{ field.byte_offset }}] |= ({{field.name}} & 0b{% for i in range(field.size) %}1{% endfor %}) << {{7-field.bit_offset}};
+        {% if 8 - field.size - field.bit_offset == 0 %}
+        buf[{{ field.byte_offset }}] |= ({{field.name}} & 0b{% for i in range(field.size) %}1{% endfor %});
+        {% else %}
+        buf[{{ field.byte_offset }}] |= (({{field.name}} & 0b{% for i in range(field.size) %}1{% endfor %}) << {{8-field.bit_offset-field.size}});
+        {% endif %}
         {% endif %}
         {% endfor %}
+
+        // Change the pointer to remaining part of the buffer
+        buf += m_numBytes;
     }
 
-    virtual uint8_t* read(const uint8_t *buf, size_t &buflen) override
+    virtual void read(const uint8_t *buf, size_t buflen) override
     {
         // Check if the buffer is large enough to read the header
-        if (buflen < (m_numBytes * 8{% if header.usesExtraBits %} + m_numExtraBits{% endif %}))
+        if (buflen < m_numBytes)
             throw std::out_of_range("{{ header.name }}: Buffer is too small");
 
         // Read each field
@@ -55,10 +58,36 @@ public:
         std::memcpy(&m_{{ field.name }}, &buf[{{ field.byte_offset }}], sizeof({{ field.type }}));
         {# Handle bit offsets #}
         {% else %}
-        m_{{field.name}} = (buf[{{field.byte_offset}}] >> {{field.bit_offset}}) & 0b{% for i in range(field.size) %}1{% endfor %};
+        {% if 8 - field.size - field.bit_offset == 0 %}
+        m_{{field.name}} = (buf[{{ field.byte_offset }}] & 0b{% for i in range(field.size) %}1{% endfor %});
+        {% else %}
+        m_{{field.name}} = ((buf[{{field.byte_offset}}] >> {{8-field.bit_offset-field.size}}) & 0b{% for i in range(field.size) %}1{% endfor %});
+        {% endif %}
         {% endif %}
         {% endfor %}
+
+        // Change the pointer to remaining part of the buffer
+        buf += m_numBytes;
     }
+
+    {% if header_globals.hasPrint %}
+    virtual void print() override
+    {
+        // TODO
+    }
+    {% endif %}
+    {% if header_globals.hasToCString %}
+    virtual void toCString(char* s) override
+    {
+        // TODO
+    }
+    {% endif %}
+    {% if header_globals.hasToStdString %}
+    virtual std::string toStdString() override
+    {
+        // TODO
+    }
+    {% endif %}
 
 private:
     {% for field in header.fields %}

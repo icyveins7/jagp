@@ -11,8 +11,15 @@ environment = jinja2.Environment(
 
 
 #%% Simple test of header
+header_globals = {
+    'hasPrint': True,
+    'hasToCString': True,
+    'hasToStdString': True
+}
 header_template = environment.get_template("Header.h")
-txt = header_template.render(all_numBits_zero=True)
+txt = header_template.render(
+    header_globals=header_globals
+)
 print(txt)
 print("==========================")
 
@@ -20,9 +27,7 @@ specheader_template = environment.get_template("SpecificHeader.h")
 specheaders = [
     {
         'name': 'HeaderA',
-        'usesExtraBits': True,
-        'numBytes': 1,
-        'numExtraBits': 2,
+        'numBytes': 1, # This must be checked against the fields
         'fields': [
             {
                 'name': 'fieldA',
@@ -42,9 +47,7 @@ specheaders = [
     },
     {
         'name': 'HeaderB',
-        'usesExtraBits': False,
-        'numBytes': 1,
-        'numExtraBits': 0,
+        'numBytes': 9, # This must be checked against the fields
         'fields': [
             {
                 'name': 'fieldA',
@@ -77,7 +80,7 @@ specheaders = [
 ]
 
 for header in specheaders:
-    txt = specheader_template.render(header=header)
+    txt = specheader_template.render(header=header, header_globals=header_globals)
     print(txt)
     print("========================================")
 

@@ -4,41 +4,41 @@
 
 #include <iostream>
 #include <stdint.h>
+#include <string>
 
 class Header
 {
 public:
-    {% if all_numExtraBits_zero %}
-    Header(
-        size_t numBytes,
-        size_t numExtraBits
-    ) : m_numBytes(numBytes), m_numExtraBits(numExtraBits)
-    {
-    }
-    {% else %}
     Header(
         size_t numBytes
     ) : m_numBytes(numBytes)
     {
     }
-    {% endif %}
 
     /// @brief Pure virtual method that writes the header's fields to the buffer
     /// @param buf Pointer to the start of the buffer. The header by definition begins at the start. Buffer is assumed to be pre-zeroed.
-    /// @return Pointer to the next byte after the header.
-    virtual uint8_t* write(uint8_t *buf, size_t &bufbitslen) = 0;
+    /// The buffer pointer is updated to point to the next byte after the header.
+    /// @param buflen Size of the buffer in bytes.
+    virtual void write(uint8_t *buf, size_t buflen) = 0;
 
     /// @brief Pure virtual method that reads the header's fields from the buffer
     /// @param buf Pointer to the start of the buffer. The header by definition begins at the start.
-    /// @return Pointer to the next byte after the header.
-    virtual uint8_t* read(const uint8_t *buf, size_t &bufbitslen) = 0;
+    /// The buffer pointer is updated to point to the next byte after the header.
+    /// @param buflen Size of the buffer in bytes.
+    virtual void read(const uint8_t *buf, size_t buflen) = 0;
+
+    {% if header_globals.hasPrint %}
+    virtual void print() = 0;
+    {% endif %}
+    {% if header_globals.hasToCString %}
+    virtual void toCString(char* s) = 0;
+    {% endif %}
+    {% if header_globals.hasToStdString %}
+    virtual std::string toStdString() = 0;
+    {% endif %}
 
     // TODO: implement read/write for headers that occupy sub-bytes
 
 protected:
     size_t m_numBytes;
-    {% if all_numExtraBits_zero %}
-    size_t m_numExtraBits;
-    {% endif %}
-
 };
