@@ -1,0 +1,14 @@
+headers:
+- 
+  name: HeaderA
+  numBytes: 1
+  fields:
+    - 
+      name: FieldA
+      size: 2
+    - FieldB b6
+
+payloads:
+
+
+packets:
