@@ -5,6 +5,7 @@ headers:
   fields:
     - 
       name: FieldA
+      type: uint8_t
       size: 2
     - FieldB b6
 
