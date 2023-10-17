@@ -146,6 +146,10 @@ def parse_component(component: dict, verbose: bool=True) -> dict:
                 "component '%s': Number of bytes specified (%d) does not match inferred (%d)" % (
                 parsed['name'], parsed['numBytes'], totalNumBytes)
             )
+        
+    # Check for valid sets of values
+    if parsed.get('valid') is not None:
+        # TODO
+        pass
 
     return parsed, offset
-            

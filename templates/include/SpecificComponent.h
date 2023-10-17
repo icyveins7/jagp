@@ -14,7 +14,7 @@ public:
 
     {% for field in component.fields %}
     /// @brief Gets the {{loop.index}}/{{loop.length}} field: {{field.name}}
-    {{ field.type }} get_{{ field.name }}(){ return m_{{ field.name }}; }
+    {{ field.type }} {% if Component_globals.use_get_prefix %}get_{% endif %}{{ field.name }}(){ return m_{{ field.name }}; }
     /// @brief Sets the {{loop.index}}/{{loop.length}} field: {{field.name}}
     void set_{{ field.name }}({{ field.type }} value){ m_{{ field.name }} = value; }
     {# leave a space between fields for readability#}
