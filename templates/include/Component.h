@@ -23,6 +23,8 @@ public:
     }
     virtual ~Component() = default; // Require a virtual destructor for base class.
 
+    size_t size() const { return m_numBytes; }
+
     /// @brief Pure virtual method that writes the Component's fields to the buffer
     /// @param buf Pointer to the (remaining) buffer. Buffer is assumed to be pre-zeroed.
     /// The buffer pointer is updated to point to the next byte after the Component.
