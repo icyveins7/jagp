@@ -2,32 +2,33 @@
 
 #pragma once
 
-#include "Header.h"
+#include "Component.h"
 
-class {{ header.name }} : public Header
+class {{ component.name }} : public Component
 {
 public:
-    {{ header.name }}()
-        : Header({{ header.numBytes }})
+    {{ component.name }}()
+        : Component({{ component.numBytes }})
     {
     }
 
-    {% for field in header.fields %}
+    {% for field in component.fields %}
     /// @brief Gets the {{loop.index}}/{{loop.length}} field: {{field.name}}
     {{ field.type }} get_{{ field.name }}(){ return m_{{ field.name }}; }
     /// @brief Sets the {{loop.index}}/{{loop.length}} field: {{field.name}}
     void set_{{ field.name }}({{ field.type }} value){ m_{{ field.name }} = value; }
+    {# leave a space between fields for readability#}
 
     {% endfor %}
 
     virtual void write(uint8_t *buf, size_t buflen) override
     {
-        // Check if the buffer is large enough to write the header
+        // Check if the buffer is large enough to write the component
         if (buflen < m_numBytes)
-            throw std::out_of_range("{{ header.name }}: Buffer is too small");
+            throw std::out_of_range("{{ component.name }}: Buffer is too small");
 
         // Write each field
-        {% for field in header.fields %}
+        {% for field in component.fields %}
         {# Handle byte offsets #}
         {% if field.size % 8 == 0 %}
         std::memcpy(&buf[{{ field.byte_offset }}], &m_{{ field.name }}, sizeof({{ field.type }}));
@@ -47,12 +48,12 @@ public:
 
     virtual void read(const uint8_t *buf, size_t buflen) override
     {
-        // Check if the buffer is large enough to read the header
+        // Check if the buffer is large enough to read the component
         if (buflen < m_numBytes)
-            throw std::out_of_range("{{ header.name }}: Buffer is too small");
+            throw std::out_of_range("{{ component.name }}: Buffer is too small");
 
         // Read each field
-        {% for field in header.fields %}
+        {% for field in component.fields %}
         {# Handle byte offsets #}
         {% if field.size % 8 == 0 %}
         std::memcpy(&m_{{ field.name }}, &buf[{{ field.byte_offset }}], sizeof({{ field.type }}));
@@ -70,19 +71,19 @@ public:
         buf += m_numBytes;
     }
 
-    {% if header_globals.hasPrint %}
+    {% if Component_globals.hasPrint %}
     virtual void print() override
     {
         // TODO
     }
     {% endif %}
-    {% if header_globals.hasToCString %}
+    {% if Component_globals.hasToCString %}
     virtual void toCString(char* s) override
     {
         // TODO
     }
     {% endif %}
-    {% if header_globals.hasToStdString %}
+    {% if Component_globals.hasToStdString %}
     virtual std::string toStdString() override
     {
         // TODO
@@ -90,7 +91,7 @@ public:
     {% endif %}
 
 private:
-    {% for field in header.fields %}
+    {% for field in component.fields %}
     {{ field.type }} m_{{ field.name }};
     {% endfor %}
 };

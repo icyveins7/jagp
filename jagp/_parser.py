@@ -1,6 +1,7 @@
 from yaml import load, dump
 from yaml import Loader, Dumper
 import argparse
+import pprint
 
 stdintDict = {
     "u8": "uint8_t",
@@ -36,14 +37,20 @@ sizeInference = {
 }
 
 def parse(desc: dict, verbose: bool=True) -> dict:
-    parsed = desc
-    for header in parsed['headers']:
-        parsedheader, offset = parse_header(header, verbose)
-        print(parsedheader)
+    parsedcomponents = list()
+    parsedpackets = list()
+
+    for component in desc['components']:
+        parsedcomponent, offset = parse_component(component, verbose)
+        pprint.pprint(parsedcomponent)
+        parsedcomponents.append(parsedcomponent)
+
+    return parsedcomponents, parsedpackets
 
 
-def parse_header(header: dict, verbose: bool=True) -> dict:
-    parsed = header
+
+def parse_component(component: dict, verbose: bool=True) -> dict:
+    parsed = component
     # Iterate over the fields
     offset = 0 # Accumulated offset in bits
     for i, field in enumerate(parsed['fields']):
@@ -127,20 +134,18 @@ def parse_header(header: dict, verbose: bool=True) -> dict:
         else: 
             raise TypeError("Field must be just a string or a dict")
         
-    # TODO: check if offset and optionally specified numBytes are valid
+    # Check numBytes and write if it doesn't exist
+    totalNumBytes = offset // 8 + (1 if offset % 8 != 0 else 0)
+    if parsed.get('numBytes') is None:
+        parsed['numBytes'] = totalNumBytes
+        if verbose:
+            print("component '%s': Total number of bytes inferred to be %d" % (parsed['name'], parsed['numBytes']))
+    else:
+        if parsed['numBytes'] != totalNumBytes:
+            raise ValueError(
+                "component '%s': Number of bytes specified (%d) does not match inferred (%d)" % (
+                parsed['name'], parsed['numBytes'], totalNumBytes)
+            )
 
     return parsed, offset
             
-
-#%% Simple test of a parser
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("input_file", type=str)
-    parser.add_argument("-v", "--verbose", action="store_true", default=False)
-    args = parser.parse_args()
-
-    with open(args.input_file, "r") as fid:
-        desc = load(fid, Loader=Loader)
-
-    print(parse(desc, args.verbose))
-

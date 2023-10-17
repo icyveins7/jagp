@@ -1,15 +1,18 @@
-headers:
+components:
 - 
   name: HeaderA
-  numBytes: 1
   fields:
     - 
       name: FieldA
       type: uint8_t
       size: 2
     - FieldB b6
-
-payloads:
-
+-
+  name: HeaderB
+  numBytes: 4
+  fields:
+    - FieldC u8
+    - FieldD s8
+    - FieldE u16
 
 packets:

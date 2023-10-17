@@ -2,18 +2,20 @@
 
 #include <stdint.h>
 #include <iostream>
-#include "Header.h"
+#include <vector>
 
-// Temporary forward declarations
-// class Payload;
+#include "Component.h"
 
+
+/// @brief Packets are comprised of an ordered vector of Components.
+/// Each Component may be individually defined,
+/// or may be itself a Packet to allow for encapsulation of different layer payloads of a stack.
 class Packet 
 {
 public:
     Packet();
-    ~Packet();
 
 private:
-    Header m_header;
-    // Payload m_payload;
+    std::vector<Component> components;
+    
 };
