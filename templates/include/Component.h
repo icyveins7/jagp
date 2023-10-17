@@ -21,6 +21,7 @@ public:
     ) : m_numBytes(numBytes)
     {
     }
+    virtual ~Component() = default; // Require a virtual destructor for base class.
 
     /// @brief Pure virtual method that writes the Component's fields to the buffer
     /// @param buf Pointer to the (remaining) buffer. Buffer is assumed to be pre-zeroed.
