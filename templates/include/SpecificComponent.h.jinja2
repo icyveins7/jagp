@@ -29,11 +29,30 @@ public:
 
         // Write each field
         {% for field in component.fields %}
-        {# Handle byte offsets #}
+        {# 
+            Handle the matrix of combinations:
+            1) Byte-aligned offsets
+            2) Bit-aligned offsets
+            A) Byte-multiple sized fields
+            B) Arbitrary sized fields
+        #}
+        {% if field.bit_offset == 0 %}{# BYTE-ALIGNED #}
         {% if field.size % 8 == 0 %}
+        {# 
+            BYTE-ALIGNED & BYTE-MULTIPLE
+            Just a direct memcpy will work as this is the simplest case.
+        #}
         std::memcpy(&buf[{{ field.byte_offset }}], &m_{{ field.name }}, sizeof({{ field.type }}));
-        {# Handle bit offsets #}
+
         {% else %}
+        {# 
+            BYTE-ALIGNED, NON-BYTE-MULTIPLE
+            Since it begins byte-aligned, we can copy the nearest byte-multiple size of bytes first.
+            THen we copy the remaining bits.
+        #}
+        {% if field.size // 8 > 0 %}{# Write the largest byte-multiple #}
+        std::memcpy(&buf[{{ field.byte_offset }}], &m_{{ field.name }}, {{ field.size // 8 }});
+
         {% if 8 - field.size - field.bit_offset == 0 %}
         buf[{{ field.byte_offset }}] |= ({{field.name}} & 0b{% for i in range(field.size) %}1{% endfor %});
         {% else %}
