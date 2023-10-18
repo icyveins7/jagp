@@ -25,6 +25,12 @@ components:
     - FieldF f32
     - FieldG f32
 
+-
+  name: ContentB
+  fields:
+    - FieldH b20
+    - FIeldI b20
+
 packets:
 -
   name: PacketAA

@@ -13,14 +13,7 @@ stdintDict = {
     "s32": "int32_t",
     "s64": "int64_t",
     "f32": "float",
-    "f64": "double",
-    "b1": "uint8_t", # For bit-sized fields
-    "b2": "uint8_t",
-    "b3": "uint8_t",
-    "b4": "uint8_t",
-    "b5": "uint8_t",
-    "b6": "uint8_t",
-    "b7": "uint8_t"
+    "f64": "double"
 }
 
 sizeInference = {
@@ -54,86 +47,9 @@ def parse_component(component: dict, verbose: bool=True) -> dict:
     # Iterate over the fields
     offset = 0 # Accumulated offset in bits
     for i, field in enumerate(parsed['fields']):
-        # Check if it's the shortcut string
-        if isinstance(field, str):
-            # Split into the name and the type
-            name, typekey = field.split(" ")
-            size = int(typekey[1:])
-            if verbose:
-                print("Shortcut split: %s %s, size %d" % (
-                    name, stdintDict[typekey], size
-                ))
+        offset, parsed_field = parse_field(offset, field, verbose)
+        parsed['fields'][i] = parsed_field # Overwrite the field
 
-            # Infer offsets
-            byte_offset = offset // 8
-            bit_offset = offset % 8
-
-            # Change the field in-place
-            parsed['fields'][i] = {
-                'name': name,
-                'type': stdintDict[typekey],
-                'size': size,
-                'byte_offset': byte_offset,
-                'bit_offset': bit_offset
-            }
-
-            # Increment offset counter
-            offset += size
-            
-        # Otherwise if it's already a dict
-        elif isinstance(field, dict):
-            # Expect to see the name and the type at minimum
-            if field.get('name') is None:
-                raise ValueError("No name specified for field")
-            if field.get('type') is None:
-                raise ValueError("No type specified for field")
-
-            # Check if size was specified, otherwise infer it
-            if field.get('size') is None:
-                parsed['fields'][i]['size'] = sizeInference[field['type']] # Change in place
-                if verbose:
-                    print("Field '%s' size inferred to be %d bits" % (field['name'], parsed['fields'][i]['size']))
-
-            # Check if offsets were specified, infer them if they aren't
-            if field.get('byte_offset') is None:
-                byte_offset = offset // 8
-                if verbose:
-                    print("Field '%s' byte offset inferred to be %d" % (field['name'], byte_offset))
-            else:
-                byte_offset = field.get('byte_offset')
-
-            if field.get('bit_offset') is None:
-                bit_offset = offset % 8
-                if verbose:
-                    print("Field '%s' bit offset inferred to be %d" % (field['name'], bit_offset))
-            else:
-                bit_offset = field.get('bit_offset')
-
-            # Verify that the final offset values are valid
-            if byte_offset*8 + bit_offset < offset:
-                raise ValueError(
-                    "Field '%s' byte offset (%d) + bit offset (%d) is greater than the current offset (%d)" % (
-                    field['name'], byte_offset, bit_offset, offset)
-                )
-            elif byte_offset*8 + bit_offset != offset:
-                if verbose:
-                    print(
-                        "Padding detected before field '%s': byte offset (%d) + bit offset (%d) is greater than expected" % (
-                        field['name'], byte_offset, byte_offset)
-                    )
-                # Move our internal offset to the specified value
-                offset = byte_offset*8 + bit_offset
-            else:
-                # Otherwise increment the offset
-                offset += parsed['fields'][i]['size']
-            
-            # Write the offset values
-            parsed['fields'][i]['byte_offset'] = byte_offset
-            parsed['fields'][i]['bit_offset'] = bit_offset
-                
-        else: 
-            raise TypeError("Field must be just a string or a dict")
-        
     # Check numBytes and write if it doesn't exist
     totalNumBytes = offset // 8 + (1 if offset % 8 != 0 else 0)
     if parsed.get('numBytes') is None:
@@ -153,3 +69,111 @@ def parse_component(component: dict, verbose: bool=True) -> dict:
         pass
 
     return parsed, offset
+
+
+def parse_field(offset, field, verbose: bool=True) -> dict:
+    # Check if it's the shortcut string
+    if isinstance(field, str):
+        # Split into the name and the type
+        name, typekey = field.split(" ")
+
+        # Extract the size in bits
+        size = int(typekey[1:])
+
+        # Infer offsets
+        byte_offset = offset // 8
+        bit_offset = offset % 8
+
+        # Then extract the type required
+        if typekey[0] == 'b':
+            # Look at the size and extract the next largest one to contain it
+            if size <= 8:
+                inferredType = "uint8_t"
+            elif size <= 16:
+                inferredType = "uint16_t"
+            elif size <= 32:
+                inferredType = "uint32_t"
+            elif size <= 64:
+                inferredType = "uint64_t"
+            else:
+                raise NotImplementedError(
+                    "%s: Bit fields larger than 64-bits not implemented" % (field['name']))
+        else:
+            # Extract from the mapping, should automatically throw for us if it doesn't exist
+            inferredType = stdintDict[typekey]
+
+        if verbose:
+            print("Shortcut split: %s %s, size %d" % (
+                name, inferredType, size
+            ))
+
+        # Change the field in-place
+        field = {
+            'name': name,
+            'type': inferredType,
+            'size': size,
+            'byte_offset': byte_offset,
+            'bit_offset': bit_offset
+        }
+
+        # Increment offset counter
+        offset += size
+        
+    # Otherwise if it's already a dict
+    elif isinstance(field, dict):
+        # Expect to see the name and the type at minimum
+        if field.get('name') is None:
+            raise ValueError("No name specified for field")
+        if field.get('type') is None:
+            raise ValueError("No type specified for field")
+
+        # Check if size was specified, otherwise infer it
+        if field.get('size') is None:
+            field['size'] = sizeInference[field['type']] # Change in place
+            if verbose:
+                print("Field '%s' size inferred to be %d bits" % (field['name'], field['size']))
+
+        # Check if offsets were specified, infer them if they aren't
+        if field.get('byte_offset') is None:
+            byte_offset = offset // 8
+            if verbose:
+                print("Field '%s' byte offset inferred to be %d" % (field['name'], byte_offset))
+        else:
+            byte_offset = field.get('byte_offset')
+
+        if field.get('bit_offset') is None:
+            bit_offset = offset % 8
+            if verbose:
+                print("Field '%s' bit offset inferred to be %d" % (field['name'], bit_offset))
+        else:
+            bit_offset = field.get('bit_offset')
+
+        # Verify that the final offset values are valid
+        if byte_offset*8 + bit_offset < offset:
+            # This would cause overlap with previous fields
+            raise ValueError(
+                "Field '%s' byte offset (%d) + bit offset (%d) is greater than the current offset (%d)" % (
+                field['name'], byte_offset, bit_offset, offset)
+            )
+        elif byte_offset*8 + bit_offset != offset:
+            # This implies there's some padding to be expected
+            if verbose:
+                print(
+                    "Padding detected before field '%s': byte offset (%d) + bit offset (%d) is greater than expected" % (
+                    field['name'], byte_offset, byte_offset)
+                )
+            # Move our internal offset to the specified value
+            offset = byte_offset*8 + bit_offset
+        else:
+            # Otherwise increment the offset
+            offset += field['size']
+        
+        # Write the offset values
+        field['byte_offset'] = byte_offset
+        field['bit_offset'] = bit_offset
+            
+    else: 
+        raise TypeError("Field must be just a string or a dict")
+    
+    return offset, field
+    
