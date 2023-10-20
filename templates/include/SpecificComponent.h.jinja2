@@ -4,6 +4,11 @@
 
 #include "Component.h"
 
+{# Define macro here for now; to move out and import eventually #}
+{% macro contiguousBitmask(len, start, end) -%}
+0b{{% for i in range(len) %}}{{% if i >= start && i < end %}}1{{% else %}}0{{% endif %}}{{% endfor %}}
+{%- endmacro %}
+
 class {{ component.name }} : public Component
 {
 public:
@@ -37,21 +42,44 @@ public:
             B) Arbitrary sized fields
         #}
         {% if field.bit_offset == 0 %}{# BYTE-ALIGNED #}
-        {% if field.size % 8 == 0 %}
-        {# 
-            BYTE-ALIGNED & BYTE-MULTIPLE
-            Just a direct memcpy will work as this is the simplest case.
-        #}
-        std::memcpy(&buf[{{ field.byte_offset }}], &m_{{ field.name }}, sizeof({{ field.type }}));
+            {% if field.size % 8 == 0 %}
+            {# 
+                BYTE-ALIGNED & BYTE-MULTIPLE
+                Just a direct memcpy will work as this is the simplest case.
+            #}
+            std::memcpy(&buf[{{ field.byte_offset }}], &m_{{ field.name }}, sizeof({{ field.type }}));
 
-        {% else %}
-        {# 
-            BYTE-ALIGNED, NON-BYTE-MULTIPLE
-            Since it begins byte-aligned, we can copy the nearest byte-multiple size of bytes first.
-            THen we copy the remaining bits.
-        #}
-        {% if field.size // 8 > 0 %}{# Write the largest byte-multiple #}
-        std::memcpy(&buf[{{ field.byte_offset }}], &m_{{ field.name }}, {{ field.size // 8 }});
+            {% else %}
+            {# 
+                BYTE-ALIGNED, NON-BYTE-MULTIPLE
+                Since it begins byte-aligned, we can copy the nearest byte-multiple size of bytes first.
+                THen we copy the remaining bits.
+            #}
+                {% if field.size // 8 > 0 %}{# Write the largest byte-multiple #}
+                std::memcpy(&buf[{{ field.byte_offset }}], &m_{{ field.name }}, {{ field.size // 8 }});
+                {% endif %}
+                {# Then copy the remaining bits; note that this also runs when the field is less than a byte #}
+                buf[{{ field.byte_offset + (field.size // 8) }}] |= (m_{{ field.name }} & 0b{% for i in range(field.size) %}1{% endfor %}) <<  {{ 8-field.bit_offset-(field.size%8) }};
+            {% endif %}
+        {% else %}{# BIT-ALIGNED #}
+            {% if field.size < (8-field.bit_offset) %}
+            {# 
+                BIT-ALIGNED & SMALLER THAN REMAINING BITS IN CURRENT BYTE
+                Then we can just copy the bits in-place
+            #}
+            buf[{{ field.byte_offset }}] |= (m_{{ field.name }} & 0b{% for i in range(field.size) %}1{% endfor %}) << {{ 8-field.bit_offset-field.size }};
+            {% else %}
+            {# 
+                BIT-ALIGNED & LARGER THAN REMAINING BITS IN CURRENT BYTE
+                Copy the starting bits to fill the byte, 
+                then copy the maximum number of full bytes, 
+                and then copy the final ending bits
+            #}
+            {# Copy initial bits #}
+            buf[{{ field.byte_offset }}] |= (m_{{ field.name }} & {{ contiguousBitmask(field.size, 0, 8-field.bit_offset) }}) << {{ 8-field.bit_offset-field.size }};
+            {# Copy remaining bytes (if there's at least one byte more) #}
+            {% if (field.size - (8-field.bit_offset)) // 8 > 0 %}{# We cannot use memcpy because we cannot arbitrarily address into bit-offsets #}
+            // TODO
 
         {% if 8 - field.size - field.bit_offset == 0 %}
         buf[{{ field.byte_offset }}] |= ({{field.name}} & 0b{% for i in range(field.size) %}1{% endfor %});
