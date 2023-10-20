@@ -31,14 +31,14 @@ if __name__ == "__main__":
         'hasToCString': True,
         'hasToStdString': True
     }
-    component_template = environment.get_template("Component.h")
+    component_template = environment.get_template("Component.h.jinja2")
     txt = component_template.render(
         Component_globals=Component_globals
     )
     print(txt)
     print("==========================")
 
-    specComponent_template = environment.get_template("SpecificComponent.h")
+    specComponent_template = environment.get_template("SpecificComponent.h.jinja2")
     for component in parsedcomponents:
         txt = specComponent_template.render(
             component=component,

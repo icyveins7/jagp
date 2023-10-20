@@ -29,7 +29,8 @@ components:
   name: ContentB
   fields:
     - FieldH b20
-    - FIeldI b20
+    - FieldI b2
+    - FieldJ b20
 
 packets:
 -

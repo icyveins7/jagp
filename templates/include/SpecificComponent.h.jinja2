@@ -6,7 +6,7 @@
 
 {# Define macro here for now; to move out and import eventually #}
 {% macro contiguousBitmask(len, start, end) -%}
-0b{{% for i in range(len) %}}{{% if i >= start && i < end %}}1{{% else %}}0{{% endif %}}{{% endfor %}}
+0b{% for i in range(len) %}{% if i >= start and i < end %}1{% else %}0{% endif %}{% endfor %}
 {%- endmacro %}
 
 class {{ component.name }} : public Component
@@ -59,15 +59,15 @@ public:
                 std::memcpy(&buf[{{ field.byte_offset }}], &m_{{ field.name }}, {{ field.size // 8 }});
                 {% endif %}
                 {# Then copy the remaining bits; note that this also runs when the field is less than a byte #}
-                buf[{{ field.byte_offset + (field.size // 8) }}] |= (m_{{ field.name }} & 0b{% for i in range(field.size) %}1{% endfor %}) <<  {{ 8-field.bit_offset-(field.size%8) }};
+                buf[{{ field.byte_offset + (field.size // 8) }}] |= (m_{{ field.name }} & {{ contiguousBitmask(field.size, field.size//8*8, field.size) }}) << {{ 8-field.bit_offset-(field.size%8) }};
             {% endif %}
         {% else %}{# BIT-ALIGNED #}
-            {% if field.size < (8-field.bit_offset) %}
+            {% if field.size <= (8-field.bit_offset) %}
             {# 
-                BIT-ALIGNED & SMALLER THAN REMAINING BITS IN CURRENT BYTE
+                BIT-ALIGNED & CAN FIT IN CURRENT BYTE
                 Then we can just copy the bits in-place
             #}
-            buf[{{ field.byte_offset }}] |= (m_{{ field.name }} & 0b{% for i in range(field.size) %}1{% endfor %}) << {{ 8-field.bit_offset-field.size }};
+            buf[{{ field.byte_offset }}] |= (m_{{ field.name }} & {{ contiguousBitmask(field.size, 0, field.size)}}) << {{ 8-field.size-field.bit_offset }};
             {% else %}
             {# 
                 BIT-ALIGNED & LARGER THAN REMAINING BITS IN CURRENT BYTE
@@ -75,18 +75,18 @@ public:
                 then copy the maximum number of full bytes, 
                 and then copy the final ending bits
             #}
-            {# Copy initial bits #}
-            buf[{{ field.byte_offset }}] |= (m_{{ field.name }} & {{ contiguousBitmask(field.size, 0, 8-field.bit_offset) }}) << {{ 8-field.bit_offset-field.size }};
+            {# Copy initial bits; note that this is a right-shift #}
+            buf[{{ field.byte_offset }}] |= ( (m_{{ field.name }} & {{ contiguousBitmask(field.size, 0, 8-field.bit_offset) }}) >> {{ field.size-8+field.bit_offset }} );
             {# Copy remaining bytes (if there's at least one byte more) #}
-            {% if (field.size - (8-field.bit_offset)) // 8 > 0 %}{# We cannot use memcpy because we cannot arbitrarily address into bit-offsets #}
+            {# Loop over the bytes and write the masked bits appropriately; We cannot use memcpy because we cannot arbitrarily address into bit-offsets #}
+            {% for j in range((field.size-8+field.bit_offset) // 8)%}
+            buf[{{ field.byte_offset + j + 1 }}] = ( (m_{{ field.name }} & {{ contiguousBitmask(field.size, 8-field.bit_offset+8*j, 8-field.bit_offset+8*(j+1)) }}) >> {{field.size-8+field.bit_offset-8*(j+1)}} );
+            {% endfor %}
+            {# Copy ending bits #}
             // TODO
+            {% endif %}
+        {% endif %}
 
-        {% if 8 - field.size - field.bit_offset == 0 %}
-        buf[{{ field.byte_offset }}] |= ({{field.name}} & 0b{% for i in range(field.size) %}1{% endfor %});
-        {% else %}
-        buf[{{ field.byte_offset }}] |= (({{field.name}} & 0b{% for i in range(field.size) %}1{% endfor %}) << {{8-field.bit_offset-field.size}});
-        {% endif %}
-        {% endif %}
         {% endfor %}
 
         // Change the pointer to remaining part of the buffer
