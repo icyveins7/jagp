@@ -1,6 +1,6 @@
 from yaml import load, dump
 from yaml import Loader, Dumper
-import argparse
+import itertools
 import pprint
 
 stdintDict = {
@@ -174,6 +174,25 @@ def parse_field(offset, field, verbose: bool=True) -> dict:
             
     else: 
         raise TypeError("Field must be just a string or a dict")
+    
+    # At the end, mutate the field dict to check whether it has to be split across multiple bytes;
+    # This helps the template in bit offset calculations (instead of doing messy math in the template itself)
+    field['sections'] = list()
+    remBits = field['size']
+    # Handle initial offset
+    if field['bit_offset'] != 0:
+        field['sections'].append(min(8 - field['bit_offset'], field['size']))
+        remBits -= field['sections'][0]
+    while remBits > 0:
+        nextCopy = min(8, remBits)
+        if nextCopy == 8 and len(field['sections']) > 0 and field['sections'][-1] % 8 == 0:
+            field['sections'][-1] += 8
+        else:
+            field['sections'].append(nextCopy)
+        remBits -= nextCopy
+
+    # Slower to accumulate after, but easier to read
+    field['sections'] = list(itertools.accumulate(field['sections']))
     
     return offset, field
     

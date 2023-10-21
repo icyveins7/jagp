@@ -82,8 +82,10 @@ public:
             {% for j in range((field.size-8+field.bit_offset) // 8)%}
             buf[{{ field.byte_offset + j + 1 }}] = ( (m_{{ field.name }} & {{ contiguousBitmask(field.size, 8-field.bit_offset+8*j, 8-field.bit_offset+8*(j+1)) }}) >> {{field.size-8+field.bit_offset-8*(j+1)}} );
             {% endfor %}
-            {# Copy ending bits #}
-            // TODO
+            {# Copy ending bits; we need to remove the first few bits, then all the bytes, and see what is left #}
+            {% if (field.size-8+field.bit_offset) % 8 > 0 %}
+            field.size - ((field.size-8+field.bit_offset) // 8 * 8) - (8-field.bit_offset)
+            {% endif %}
             {% endif %}
         {% endif %}
 
