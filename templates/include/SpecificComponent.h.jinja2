@@ -9,6 +9,11 @@
 0b{% for i in range(len) %}{% if i >= start and i < end %}1{% else %}0{% endif %}{% endfor %}
 {%- endmacro %}
 
+{# Performs left or right shift for negative/positive values; 0 values are ignored #}
+{% macro lrshift(shift) -%}
+{% if shift > 0 %}>> {{ shift }}{% elif shift < 0 %}<< {{ shift }}{% endif %}
+{%- endmacro %}
+
 class {{ component.name }} : public Component
 {
 public:
@@ -41,54 +46,25 @@ public:
             A) Byte-multiple sized fields
             B) Arbitrary sized fields
         #}
-        {% if field.bit_offset == 0 %}{# BYTE-ALIGNED #}
-            {% if field.size % 8 == 0 %}
+        {% if field.bit_offset == 0 and field.size % 8 == 0%}
             {# 
                 BYTE-ALIGNED & BYTE-MULTIPLE
                 Just a direct memcpy will work as this is the simplest case.
             #}
             std::memcpy(&buf[{{ field.byte_offset }}], &m_{{ field.name }}, sizeof({{ field.type }}));
-
-            {% else %}
-            {# 
-                BYTE-ALIGNED, NON-BYTE-MULTIPLE
-                Since it begins byte-aligned, we can copy the nearest byte-multiple size of bytes first.
-                THen we copy the remaining bits.
+        {% else %}
+            {#
+                For all other cases, we use the sections iterable provided in the field to help us.
+                The sections mask provides the number of bits for every byte starting from the byte_offset.
             #}
-                {% if field.size // 8 > 0 %}{# Write the largest byte-multiple #}
-                std::memcpy(&buf[{{ field.byte_offset }}], &m_{{ field.name }}, {{ field.size // 8 }});
-                {% endif %}
-                {# Then copy the remaining bits; note that this also runs when the field is less than a byte #}
-                buf[{{ field.byte_offset + (field.size // 8) }}] |= (m_{{ field.name }} & {{ contiguousBitmask(field.size, field.size//8*8, field.size) }}) << {{ 8-field.bit_offset-(field.size%8) }};
+            {% for bitEnd in field.sections %}
+            {% if loop.index0 == 0 and field.bit_offset != 0 %}{# The first loop must take the bit_offset into consideration #}
+            buf[{{field.byte_offset}}] |= ( m_{{field.name}} & {{contiguousBitmask(field.size, 0, bitEnd)}} ) {{lrshift(8-field.bit_offset-bitEnd)}};
+            {% else %}
+            // TODO
             {% endif %}
-        {% else %}{# BIT-ALIGNED #}
-            {% if field.size <= (8-field.bit_offset) %}
-            {# 
-                BIT-ALIGNED & CAN FIT IN CURRENT BYTE
-                Then we can just copy the bits in-place
-            #}
-            buf[{{ field.byte_offset }}] |= (m_{{ field.name }} & {{ contiguousBitmask(field.size, 0, field.size)}}) << {{ 8-field.size-field.bit_offset }};
-            {% else %}
-            {# 
-                BIT-ALIGNED & LARGER THAN REMAINING BITS IN CURRENT BYTE
-                Copy the starting bits to fill the byte, 
-                then copy the maximum number of full bytes, 
-                and then copy the final ending bits
-            #}
-            {# Copy initial bits; note that this is a right-shift #}
-            buf[{{ field.byte_offset }}] |= ( (m_{{ field.name }} & {{ contiguousBitmask(field.size, 0, 8-field.bit_offset) }}) >> {{ field.size-8+field.bit_offset }} );
-            {# Copy remaining bytes (if there's at least one byte more) #}
-            {# Loop over the bytes and write the masked bits appropriately; We cannot use memcpy because we cannot arbitrarily address into bit-offsets #}
-            {% for j in range((field.size-8+field.bit_offset) // 8)%}
-            buf[{{ field.byte_offset + j + 1 }}] = ( (m_{{ field.name }} & {{ contiguousBitmask(field.size, 8-field.bit_offset+8*j, 8-field.bit_offset+8*(j+1)) }}) >> {{field.size-8+field.bit_offset-8*(j+1)}} );
             {% endfor %}
-            {# Copy ending bits; we need to remove the first few bits, then all the bytes, and see what is left #}
-            {% if (field.size-8+field.bit_offset) % 8 > 0 %}
-            field.size - ((field.size-8+field.bit_offset) // 8 * 8) - (8-field.bit_offset)
-            {% endif %}
-            {% endif %}
         {% endif %}
-
         {% endfor %}
 
         // Change the pointer to remaining part of the buffer

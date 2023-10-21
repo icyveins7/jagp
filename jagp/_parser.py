@@ -185,10 +185,7 @@ def parse_field(offset, field, verbose: bool=True) -> dict:
         remBits -= field['sections'][0]
     while remBits > 0:
         nextCopy = min(8, remBits)
-        if nextCopy == 8 and len(field['sections']) > 0 and field['sections'][-1] % 8 == 0:
-            field['sections'][-1] += 8
-        else:
-            field['sections'].append(nextCopy)
+        field['sections'].append(nextCopy)
         remBits -= nextCopy
 
     # Slower to accumulate after, but easier to read
