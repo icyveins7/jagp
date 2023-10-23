@@ -58,8 +58,9 @@ public:
                 The sections mask provides the number of bits for every byte starting from the byte_offset.
             #}
             {% for bitEnd in field.sections %}
-            {% if loop.index0 == 0 %}{# The first loop must take the bit_offset into consideration #}
-            buf[{{field.byte_offset}}] |= ( m_{{field.name}} & {{contiguousBitmask(field.size, 0, bitEnd)}} ){{lrshift(field.size-field.bit_offset)}}; // Section 1 (TODO: fix formula for bitshifts)
+            {% if loop.index0 == 0 %}
+            {# The first loop must take the bit_offset into consideration #}
+            buf[{{field.byte_offset}}] |= ( m_{{field.name}} & {{contiguousBitmask(field.size, 0, bitEnd)}} ){{lrshift(field.size-8+field.bit_offset)}}; // Section 1 (TODO: fix formula for bitshifts)
             {% else %}
                 {% if bitEnd - field.sections[loop.index0-1] == 8 %}
                 buf[{{field.byte_offset + loop.index0}}] |= ( m_{{field.name}} & {{contiguousBitmask(field.size, bitEnd-8, bitEnd)}} ){{lrshift(field.size-bitEnd)}}; // Section {{loop.index}}
