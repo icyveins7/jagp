@@ -22,6 +22,9 @@ namespace Component{
         {
         }
 
+        /// @brief Returns the size of this component. Should return a dynamic value if there are variable-sized fields
+        size_t size() const { return m_numBytes; }
+
         {% for field in component.fields %}
         /// @brief Gets the {{loop.index}}/{{loop.length}} field: {{field.name}}
         {{ field.type }} {% if Component_globals.use_get_prefix %}get_{% endif %}{{ field.name }}(){ return m_{{ field.name }}; }
