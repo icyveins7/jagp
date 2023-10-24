@@ -103,20 +103,20 @@ public:
             For all other cases, we use the sections iterable provided in the field to help us.
             The sections mask provides the number of bits for every byte starting from the byte_offset.
 
-            It may be significantly easier to make a pointer size that encompasses the variable,
+            TODO: It may be significantly easier to make a pointer size that encompasses the variable,
             and then mask from it once to read it instead.
+            We can do this as an if/else checking the buffer size and making sure we can read enough bytes?
+            For now just read byte by byte if necessary?
         #}
-        {{field.type}}* {{field.name}} = reinterpret_cast<{{field.type}}>(&buf[{{field.byte_offset}}]); // Read a block big enough to contain the variable? May get out-of-bounds errors i think..
-
         {% for bitEnd in field.sections %}
         {% if loop.index0 == 0 %}
         {# The first loop must take the bit_offset into consideration #}
         m_{{field.name}} |= ( buf[{{field.byte_offset}}] & {{contiguousBitmask(8, field.bit_offset, field.bit_offset+bitEnd)}} ){{lrshift(-field.size+8-field.bit_offset)}}; // Section 1
         {% else %}
         {% if bitEnd - field.sections[loop.index0-1] == 8 %}
-        m_{{field.name}} |= buf[{{field.byte_offset + loop.index0}}]{{lrshift(-field.size+8-field.sections[loop.index0-1])}}; // Section {{loop.index}} TODO
+        m_{{field.name}} |= buf[{{field.byte_offset + loop.index0}}]{{lrshift(-field.size+8+field.sections[loop.index0-1])}}; // Section {{loop.index}}
         {% else %}
-        buf[{{field.byte_offset + loop.index0}}] |= ( m_{{field.name}} & {{contiguousBitmask(field.size, field.sections[loop.index0-1], bitEnd)}} ){{lrshift(-8+bitEnd-field.sections[loop.index0-1])}}; // Section {{loop.index}} TODO
+        m_{{field.name}} |= ( buf[{{field.byte_offset + loop.index0}}] & {{contiguousBitmask(8, 0, bitEnd-field.sections[loop.index0-1])}} ){{lrshift(8-bitEnd+field.sections[loop.index0-1])}}; // Section {{loop.index}}
         {% endif %}
         {% endif %}
         {% endfor %}
