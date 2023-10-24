@@ -7,14 +7,12 @@
 #include <vector>
 #include <memory>
 
-#include "Component.h"
-
 /// @brief Packets are created by assembling Components in a particular order.
 /// Each Component may be individually defined,
 /// or may be itself a Packet to allow for encapsulation of different layer payloads of a stack.
 class Packet
 {
-public:
+protected:
     Packet() = default;
     virtual ~Packet() = default; // Require a virtual destructor for base class.
 

@@ -38,6 +38,13 @@ def parse(desc: dict, verbose: bool=True) -> dict:
         pprint.pprint(parsedcomponent)
         parsedcomponents.append(parsedcomponent)
 
+    # Extract a list of all the parsed component names
+    component_list = [c['name'] for c in parsedcomponents]
+    for packet in desc['packets']:
+        parsedpacket, offset = parse_packet(packet, component_list, verbose)
+        pprint.pprint(parsedpacket)
+        parsedpackets.append(parsedpacket)
+
     return parsedcomponents, parsedpackets
 
 
@@ -193,3 +200,7 @@ def parse_field(offset, field, verbose: bool=True) -> dict:
     
     return offset, field
     
+def parse_packet(packet: dict, component_list: list, verbose: bool=True) -> dict:
+    for component in packet['components']:
+        # Check if the component referenced is in the list?
+        # TODO: maybe change to use yaml substitution since it's inbuilt?
