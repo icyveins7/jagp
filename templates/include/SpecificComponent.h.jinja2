@@ -3,6 +3,9 @@
 
 #pragma once
 
+#include <string>
+#include <stdint.h>
+
 namespace Component{
 
     class {{ component.name }}
@@ -138,7 +141,7 @@ namespace Component{
         std::string toStdString()
         {
             std::string s;
-            s = "{{component.name}}\n"
+            s = "{{component.name}}\n";
             // TODO: complete with fields?
 
             return s;

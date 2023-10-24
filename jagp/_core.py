@@ -34,14 +34,20 @@ if __name__ == "__main__":
     txt = component_template.render(
         Component_globals=Component_globals
     )
-    print(txt)
-    print("==========================")
-
+    with open(os.path.join(
+        os.path.dirname(__file__), "..",
+        "build", "Component.h"), "w"
+    ) as fid:
+        fid.write(txt)
+    
     specComponent_template = environment.get_template("SpecificComponent.h.jinja2")
     for component in parsedcomponents:
         txt = specComponent_template.render(
             component=component,
             Component_globals=Component_globals
         )
-        print(txt)
-        print("========================================")
+        with open(os.path.join(
+            os.path.dirname(__file__), "..",
+            "build", "%s.h" % (component['name'])), "w"
+        ) as fid:
+            fid.write(txt)

@@ -41,7 +41,7 @@ def parse(desc: dict, verbose: bool=True) -> dict:
     # Extract a list of all the parsed component names
     component_list = [c['name'] for c in parsedcomponents]
     for packet in desc['packets']:
-        parsedpacket, offset = parse_packet(packet, component_list, verbose)
+        parsedpacket = parse_packet(packet, component_list, verbose)
         pprint.pprint(parsedpacket)
         parsedpackets.append(parsedpacket)
 
@@ -201,6 +201,35 @@ def parse_field(offset, field, verbose: bool=True) -> dict:
     return offset, field
     
 def parse_packet(packet: dict, component_list: list, verbose: bool=True) -> dict:
-    for component in packet['components']:
-        # Check if the component referenced is in the list?
-        # TODO: maybe change to use yaml substitution since it's inbuilt?
+    # Not going to use the YAML ampersand/asterisk referencing system 
+    # because it's confusing when there's a lot of components
+    for i, component in enumerate(packet['components']):
+        # Parse the short form string
+        if isinstance(component, str):
+            # Split into the name and the type
+            component_name, component_type = component.split(" ")
+            if verbose:
+                print("Shortcut split: Component %s, type %s" % (component_name, component_type))
+
+            # Construct the dictionary
+            cdict = {
+                'name': component_name,
+                'type': component_type
+            }
+
+        elif isinstance(component, dict):
+            cdict = component
+
+        else:
+            raise TypeError("Component must be just a string or a dict")
+        
+        # Check that the component type is valid
+        if cdict['type'] not in component_list:
+            raise ValueError("Component '%s' has an invalid type '%s'" % (
+                cdict['name'], cdict['type']))
+        
+        # Write back to the components itself
+        packet['components'][i] = cdict
+
+    return packet
+

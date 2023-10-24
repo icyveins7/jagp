@@ -31,10 +31,18 @@ components:
     - FieldH b20
     - FieldI b2
     - FieldJ b20
-
+# ===============================
 packets:
 -
   name: PacketAA
   components:
-    - HeaderA header
-    - ContentA contents
+    - header HeaderA
+    -
+      name: contents
+      type: ContentA
+
+-
+  name: PacketAB
+  components:
+    - header HeaderA
+    - contents ContentB
