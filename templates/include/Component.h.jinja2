@@ -21,30 +21,32 @@ public:
     ) : m_numBytes(numBytes)
     {
     }
-    virtual ~Component() = default; // Require a virtual destructor for base class.
 
     size_t size() const { return m_numBytes; }
 
-    /// @brief Pure virtual method that writes the Component's fields to the buffer
+    /// @brief Method that writes the Component's fields to the buffer; to be implemented in sub-classes.
     /// @param buf Pointer to the (remaining) buffer. Buffer is assumed to be pre-zeroed.
     /// The buffer pointer is updated to point to the next byte after the Component.
     /// @param buflen Size of the (remaining) buffer in bytes.
-    virtual void write(uint8_t *buf, size_t buflen) = 0;
+    void write(uint8_t *buf, size_t buflen)
+    {
+        throw std::runtime_error("Component::write() called: this should never be called directly, and should be re-implemented in child classes.")
+    };
 
-    /// @brief Pure virtual method that reads the Component's fields from the buffer
+    /// @brief Method that reads the Component's fields from the buffer
     /// @param buf Pointer to the (remaining) buffer.
     /// The buffer pointer is updated to point to the next byte after the Component.
     /// @param buflen Size of the (remaining) buffer in bytes.
-    virtual void read(const uint8_t *buf, size_t buflen) = 0;
+    void read(const uint8_t *buf, size_t buflen)
+    {
+        throw std::runtime_error("Component::read() called: this should never be called directly, and should be re-implemented in child classes.")
+    }
 
-    {% if Component_globals.hasPrint %}
-    virtual void print() = 0;
-    {% endif %}
     {% if Component_globals.hasToCString %}
-    virtual void toCString(char* s) = 0;
+    void toCString(char* s, size_t len);
     {% endif %}
     {% if Component_globals.hasToStdString %}
-    virtual std::string toStdString() = 0;
+    std::string toStdString() = 0;
     {% endif %}
 
     // TODO: implement read/write for Components that occupy sub-bytes

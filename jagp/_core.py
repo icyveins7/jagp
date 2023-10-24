@@ -27,7 +27,6 @@ if __name__ == "__main__":
     # Generate templates
     Component_globals = {
         'use_get_prefix': False,
-        'hasPrint': True,
         'hasToCString': True,
         'hasToStdString': True
     }

@@ -1,0 +1,9 @@
+{# Define macro here for now; to move out and import eventually #}
+{% macro contiguousBitmask(len, start, end) -%}
+0b{% for i in range(len) %}{% if i >= start and i < end %}1{% else %}0{% endif %}{% endfor %}
+{%- endmacro %}
+
+{# Performs left or right shift for negative/positive values; 0 values are ignored #}
+{% macro lrshift(shift) -%}
+{% if shift > 0 %} >> {{ shift }}{% elif shift < 0 %} << {{ -shift }}{% endif %}
+{%- endmacro %}
