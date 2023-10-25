@@ -29,6 +29,22 @@ sizeInference = {
     "double": 64
 }
 
+def inferBitsType(size: int) -> str:
+    # Look at the size and extract the next largest one to contain it
+    if size <= 8:
+        inferredType = "uint8_t"
+    elif size <= 16:
+        inferredType = "uint16_t"
+    elif size <= 32:
+        inferredType = "uint32_t"
+    elif size <= 64:
+        inferredType = "uint64_t"
+    else:
+        raise NotImplementedError(
+            "Bit fields larger than 64-bits not implemented")
+    
+    return inferredType
+
 def parse(desc: dict, verbose: bool=True) -> dict:
     parsedcomponents = list()
     parsedpackets = list()
@@ -93,18 +109,7 @@ def parse_field(offset, field, verbose: bool=True) -> dict:
 
         # Then extract the type required
         if typekey[0] == 'b':
-            # Look at the size and extract the next largest one to contain it
-            if size <= 8:
-                inferredType = "uint8_t"
-            elif size <= 16:
-                inferredType = "uint16_t"
-            elif size <= 32:
-                inferredType = "uint32_t"
-            elif size <= 64:
-                inferredType = "uint64_t"
-            else:
-                raise NotImplementedError(
-                    "%s: Bit fields larger than 64-bits not implemented" % (field['name']))
+            inferredType = inferBitsType(size)
         else:
             # Extract from the mapping, should automatically throw for us if it doesn't exist
             inferredType = stdintDict[typekey]
@@ -133,10 +138,17 @@ def parse_field(offset, field, verbose: bool=True) -> dict:
             raise ValueError("No name specified for field")
         if field.get('type') is None:
             raise ValueError("No type specified for field")
-        
         # Check if the type is bits, if so we allocate an appropriate type for it
-        # TODO: handle either size or type being set when type is 'bits'?
-
+        elif field.get('type') == 'bits':
+            if field.get('size') is None:
+                raise ValueError("Must specify size for 'bits' type")
+            
+            # Infer a holding type
+            inferredType = inferBitsType(field.get('size'))
+            if verbose:
+                print("Field '%s' will be stored as %s" % (field['name'], inferredType))
+            field['type'] = inferredType
+        
         # Check if size was specified, otherwise infer it
         if field.get('size') is None:
             field['size'] = sizeInference[field['type']] # Change in place
@@ -185,6 +197,13 @@ def parse_field(offset, field, verbose: bool=True) -> dict:
     else: 
         raise TypeError("Field must be just a string or a dict")
     
+    # Check if the field is repeatable
+    if field.get('repeatable') is not None:
+        # TODO: for now we assume it must be aligned and byte-multiple
+        if field['bit_offset'] != 0 or field['size'] % 8 != 0:
+            raise NotImplementedError("Repeated fields must be byte-aligned and byte-multiple for now; may change in future")
+
+
     # At the end, mutate the field dict to check whether it has to be split across multiple bytes;
     # This helps the template in bit offset calculations (instead of doing messy math in the template itself)
     field['sections'] = list()

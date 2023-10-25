@@ -165,7 +165,11 @@ private:
     // === Member fields ===
 
     {% for field in component.fields %}
+    {% if field.repeats is defined %}
+    std::vector<{{field.type}}> m_{{field.name}};
+    {% else %}
     {{ field.type }} m_{{ field.name }} = 0;
+    {% endif %}
     {% endfor %}
 };
 
