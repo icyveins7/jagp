@@ -31,6 +31,16 @@ components:
     - FieldH b20
     - FieldI b2
     - FieldJ b20
+
+-
+  name: ContentC
+  fields:
+    - FieldKCount b4
+    -
+      name: FieldK
+      type: bits
+      size: 20
+      repeats: FieldKCount
 # ===============================
 packets:
 -

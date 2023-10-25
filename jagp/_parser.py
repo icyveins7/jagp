@@ -133,6 +133,9 @@ def parse_field(offset, field, verbose: bool=True) -> dict:
             raise ValueError("No name specified for field")
         if field.get('type') is None:
             raise ValueError("No type specified for field")
+        
+        # Check if the type is bits, if so we allocate an appropriate type for it
+        # TODO: handle either size or type being set when type is 'bits'?
 
         # Check if size was specified, otherwise infer it
         if field.get('size') is None:
