@@ -28,17 +28,18 @@ if __name__ == "__main__":
     Component_globals = {
         'use_get_prefix': False,
         'hasToCString': True,
-        'hasToStdString': True
+        'hasToStdString': True,
+        'enclose_components_in_namespace': True
     }
-    component_template = environment.get_template("Component.h.jinja2")
-    txt = component_template.render(
-        Component_globals=Component_globals
-    )
-    with open(os.path.join(
-        os.path.dirname(__file__), "..",
-        "build", "Component.h"), "w"
-    ) as fid:
-        fid.write(txt)
+    # component_template = environment.get_template("Component.h.jinja2")
+    # txt = component_template.render(
+    #     Component_globals=Component_globals
+    # )
+    # with open(os.path.join(
+    #     os.path.dirname(__file__), "..",
+    #     "build", "Component.h"), "w"
+    # ) as fid:
+    #     fid.write(txt)
     
     specComponent_template = environment.get_template("SpecificComponent.h.jinja2")
     for component in parsedcomponents:
@@ -46,8 +47,9 @@ if __name__ == "__main__":
             component=component,
             Component_globals=Component_globals
         )
-        with open(os.path.join(
+        filepath = os.path.join(
             os.path.dirname(__file__), "..",
-            "build", "%s.h" % (component['name'])), "w"
-        ) as fid:
+            "build", "%s.h" % (component['name'])) 
+        with open(filepath, "w") as fid:
+            print("Writing to %s" % (filepath))
             fid.write(txt)
