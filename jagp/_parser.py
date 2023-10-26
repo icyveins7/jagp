@@ -29,6 +29,7 @@ sizeInference = {
     "double": 64
 }
 
+# ========================================================================================
 def inferBitsType(size: int) -> str:
     # Look at the size and extract the next largest one to contain it
     if size <= 8:
@@ -45,6 +46,8 @@ def inferBitsType(size: int) -> str:
     
     return inferredType
 
+
+# ========================================================================================
 def parse(desc: dict, verbose: bool=True) -> dict:
     parsedcomponents = list()
     parsedpackets = list()
@@ -64,7 +67,7 @@ def parse(desc: dict, verbose: bool=True) -> dict:
     return parsedcomponents, parsedpackets
 
 
-
+# ========================================================================================
 def parse_component(component: dict, verbose: bool=True) -> dict:
     parsed = component
     # Iterate over the fields
@@ -94,7 +97,8 @@ def parse_component(component: dict, verbose: bool=True) -> dict:
     return parsed, offset
 
 
-def parse_field(offset, field, verbose: bool=True) -> dict:
+# ========================================================================================
+def parse_field(offset: int, field: str|dict, verbose: bool=True) -> dict:
     # Check if it's the shortcut string
     if isinstance(field, str):
         # Split into the name and the type
@@ -222,6 +226,8 @@ def parse_field(offset, field, verbose: bool=True) -> dict:
     
     return offset, field
     
+
+# ========================================================================================
 def parse_packet(packet: dict, component_list: list, verbose: bool=True) -> dict:
     # Not going to use the YAML ampersand/asterisk referencing system 
     # because it's confusing when there's a lot of components
