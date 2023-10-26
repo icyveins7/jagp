@@ -1,59 +1,111 @@
-components:
-- 
-  name: HeaderA
-  fields:
-    - 
-      name: FieldA
-      type: uint8_t
-      size: 2
-      valid: {
-        X: 0x0,
-        Y: 0x1,
-        Z: 0x2
-      }
-    - FieldB b6
--
-  name: HeaderB
-  numBytes: 4
-  fields:
-    - FieldC u8
-    - FieldD s8
-    - FieldE u16
--
-  name: ContentA
-  fields:
-    - FieldF f32
-    - FieldG f32
+components: {
+  HeaderA: {
+    fields: [
+      {
+        name: FieldA,
+        type: uint8_t,
+        size: 2,
+        valid: {
+          X: 0x0,
+          Y: 0x1,
+          Z: 0x2
+        }
+      },
+      FieldB b6
+    ]
+  },
 
--
-  name: ContentB
-  fields:
-    - FieldH b20
-    - FieldI b2
-    - FieldJ b20
+  HeaderB: {
+      numBytes: 4,
+      fields: [
+        FieldC u8,
+        FieldD s8,
+        FieldE u16
+      ]
+  },
+    
+  ContentA: {
+      fields: [
+        FieldF f32,
+        FieldG f32
+      ]
+  },
+    
+  ContentB: {
+      fields: [
+        FieldH b20,
+        FieldI b2,
+        FieldJ b20
+      ]
+  },
 
--
-  name: ContentC
-  fields:
-    - FieldKCount u8
-    -
-      name: FieldK
-      type: bits
-      size: 16
-      repeats: FieldKCount
-      
+  HeaderA: {
+    fields: [
+      {
+        name: FieldA,
+        type: uint8_t,
+        size: 2,
+        valid: {
+          X: 0x0,
+          Y: 0x1,
+          Z: 0x2
+        }
+      },
+      FieldB b6
+    ]
+  },
+
+  HeaderB: {
+      numBytes: 4,
+      fields: [
+        FieldC u8,
+        FieldD s8,
+        FieldE u16,
+      ]
+  },
+    
+  ContentA: {
+      fields: [
+        FieldF f32,
+        FieldG f32
+      ]
+       
+  },
+    
+  ContentB: {
+      fields: [
+        FieldH b20,
+        FieldI b2,
+        FieldJ b20
+      ]
+       
+  },
+  
+  ContentC: {
+      fields: [
+        FieldKCount u8,
+        {
+          name: FieldK,
+          type: bits,
+          size: 16,
+          repeats: FieldKCount      
+        }
+      ]
+  }
+}
 # ===============================
-packets:
--
-  name: PacketAA
-  components:
-    - header HeaderA
-    -
-      name: contents
-      type: ContentA
+# packets:
+# - PacketAA: {
+#     components:
+#       - header HeaderA
+#       -
+#         name: contents
+#         type: ContentA
+# }
 
--
-  name: PacketAB
-  components:
-    - header HeaderA
-    - contents ContentB
+# - PacketAB: {
+#     components:
+#       - header HeaderA
+#       - contents ContentB
+# }
+ 
