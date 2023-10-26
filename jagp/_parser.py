@@ -63,13 +63,32 @@ def inferBitsType(size: int) -> str:
 
 # ========================================================================================
 def parse(desc: dict, verbose: bool=True) -> (dict, dict):
+    """
+    Parses a YAML description of a set of components and packets, and returns a
+    tuple of two dictionaries: one containing the parsed components, and the other
+    containing the parsed packets.
+
+    Parameters
+    ----------
+    desc : dict
+        The YAML description of the components and packets
+
+    verbose : bool, optional
+        Whether to print debug information during parsing, by default True
+
+    Returns
+    -------
+    (dict, dict)
+        A tuple of two dictionaries: the first containing the parsed components, and
+        the second containing the parsed packets
+    """
     parsedcomponents = dict()
     parsedpackets = dict()
 
     for component_name, component in desc['components'].items():
         if verbose:
             print("=== Parsing component '%s'" % (component_name))
-        parsedcomponent, offset = parse_component(component, verbose)
+        parsedcomponent = parse_component(component, verbose)
         pprint.pprint(parsedcomponent)
         parsedcomponents[component_name] = parsedcomponent
 
@@ -84,6 +103,26 @@ def parse(desc: dict, verbose: bool=True) -> (dict, dict):
 
 # ========================================================================================
 def parse_component(component: dict, verbose: bool=True) -> dict:
+    """
+    Parses a component dictionary from a YAML description, and returns a
+    dictionary containing the parsed information.
+
+    As part of the parsing, the 'numBytes' value is set based on the list of the
+    parsed fields. However, this is ignored if it is already specified.
+
+    Parameters
+    ----------
+    component : dict
+        The component dictionary from the YAML description
+
+    verbose : bool, optional
+        Whether to print debug information during parsing, by default True
+
+    Returns
+    -------
+    dict
+        A dictionary containing the parsed information about the component
+    """
     parsed = component
     # Iterate over the fields
     offset = 0 # Accumulated offset in bits
@@ -109,7 +148,7 @@ def parse_component(component: dict, verbose: bool=True) -> dict:
         # TODO
         pass
 
-    return parsed, offset
+    return parsed
 
 
 # ========================================================================================
