@@ -18,7 +18,7 @@ I borrowed a lot of inspiration from kaitai-struct. I use YAML to define packet 
 
 # Defining the YAML
 
-jagp will look for the ```components``` key in the YAML, and generate a C++ .h file for each item. The ```components``` key points to a dictionary of dictionaries (or mapping of mappings); each key will represent the name of the component.
+jagp will look for the ```components``` and ```packets``` keys in the YAML, and generate a C++ .h file for each item. The ```components``` key points to a dictionary of dictionaries (or mapping of mappings); each key will represent the name of the component. Similarly, the ```packets``` key points to a dictionary of dictionaries where each key will represent the name of the packet.
 
 ```yaml
 components: {
@@ -30,27 +30,54 @@ components: {
         ...
     }
 }
+
+packets: {
+    PacketAB: { # Generates a PacketAB.h
+        ...
+    }
+}
 ```
 
 ## Component
 
-Within the component, the bare minimum is to define a ```fields``` key which points to a list (or sequence). Within the list, each item is either a simple string or a dictionary.
+Within the component, the bare minimum is to define a ```fields``` key which points to a list (or sequence). Within the list, each item is either a simple string (the recommended way) or a dictionary. The string definition helps you to infer the C++ type container, especially in the case of bit-sized fields.
 
 ```yaml
 ComponentA: {
     fields: [
-        FieldA u8,
-        FieldB b4,
-        FieldC b2,
-        FieldD b10,
+        FieldA u8, # 1st field is a uint8
+        FieldB b4, # 2nd field inferred as uint8, but with only 4 bits
+        FieldC b2, # 3rd field inferred as uint8, but with only 2 bits 
+        FieldD b10, # 4th field inferred as uint16, but with only 10 bits
         {
-            name: FieldE,
-            type: float
+            name: FieldE, # We can also define a dictionary instead of a string
+            type: float # Then we must specify the type
         },
         {
             name: FieldF,
-            type # TODO: complete
+            type: bits, # If we use bits in the dictionary, we must also specify the size
+            size: 16
         }
+    ],
+    numBytes: 9 # Optional: You can specify the number of (non-repeated field) bytes used in this Component. If specified, this is checked during the parse, otherwise it is inferred from the fields description.
+}
+```
+
+For now, the only constraint to the __Component__ is that it must define a group of fields that begins and ends on a byte boundary (not allowed to start at some bit offset), since writing/reading begins from a ```uint8_t``` pointer.
+
+## Packets
+
+__Packets__ are ordered lists of previously defined __Components__, or other __Packets__. The idea is that when looking at the generated C++ class type for a given __Packet__, one should know specifically the __Components__ which it is comprised of, similar to how __Components__ consist of __Fields__.
+
+In the YAML definition, it looks like:
+
+```yaml
+PacketABC: {
+    components: [
+        ComponentA,
+        ComponentB,
+        ComponentC
     ]
 }
 ```
+

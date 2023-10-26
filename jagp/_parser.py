@@ -130,8 +130,14 @@ def parse_component(component: dict, verbose: bool=True) -> dict:
         offset, parsed_field = parse_field(offset, field, verbose)
         parsed['fields'][i] = parsed_field # Overwrite the field
 
+    # For now, offset must end at the byte
+    if offset % 8 != 0:
+        raise ValueError(
+            "Offset (%d) is not a multiple of 8 bits" % (offset)
+        )
+
     # Check numBytes and write if it doesn't exist
-    totalNumBytes = offset // 8 + (1 if offset % 8 != 0 else 0)
+    totalNumBytes = offset // 8
     if parsed.get('numBytes') is None:
         parsed['numBytes'] = totalNumBytes
         if verbose:
