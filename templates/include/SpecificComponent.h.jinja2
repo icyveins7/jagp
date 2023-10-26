@@ -5,16 +5,17 @@
 
 #include <string>
 #include <stdint.h>
+#include <stdexcept>
 
 {% if Component_globals.enclose_components_in_namespace %}
 namespace Component{
 {% endif %}
 
-class {{ component.name }}
+class {{ name }}
 {
 public:
     /// @brief Empty constructor. This initializes the internal size to the size of all fixed-size fields.
-    {{ component.name }}()
+    {{ name }}()
         : m_numBytes({{component.numBytes}}) // This is the size of the fixed field bytes
     {
     }
@@ -33,7 +34,7 @@ public:
 
     {% endfor %}
 
-    /// @brief Method that writes the {{component.name}}'s fields to the buffer.
+    /// @brief Method that writes the {{name}}'s fields to the buffer.
     /// @param buf Pointer to the (remaining) buffer. Buffer is assumed to be pre-zeroed.
     /// The buffer pointer is updated to point to the next byte after the Component.
     /// @param buflen Size of the (remaining) buffer in bytes.
@@ -41,7 +42,7 @@ public:
     {
         // Check if the buffer is large enough to write the component
         if (buflen < m_numBytes)
-            throw std::out_of_range("{{ component.name }}: Buffer is too small");
+            throw std::out_of_range("{{ name }}: Buffer is too small");
 
         // Write each field
         {% for field in component.fields %}
@@ -83,7 +84,7 @@ public:
         buf += size();
     }
 
-    /// @brief Method that reads the {{component.name}}'s fields from the buffer.
+    /// @brief Method that reads the {{name}}'s fields from the buffer.
     /// @param buf Pointer to the (remaining) buffer.
     /// The buffer pointer is updated to point to the next byte after the Component.
     /// @param buflen Size of the (remaining) buffer in bytes.
@@ -91,7 +92,7 @@ public:
     {
         // Check if the buffer is large enough to read the component
         if (buflen < m_numBytes)
-            throw std::out_of_range("{{ component.name }}: Buffer is too small");
+            throw std::out_of_range("{{ name }}: Buffer is too small");
 
         // Read each field
         {% for field in component.fields %}
@@ -142,7 +143,7 @@ public:
     void toCString(char* s, size_t len)
     {
         std::snprintf(s, len,
-            "{{component.name}}\n"
+            "{{name}}\n"
         );
         // TODO: complete with fields?
     }
@@ -151,7 +152,7 @@ public:
     std::string toStdString()
     {
         std::string s;
-        s = "{{component.name}}\n";
+        s = "{{name}}\n";
         // TODO: complete with fields?
 
         return s;

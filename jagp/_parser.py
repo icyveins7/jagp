@@ -31,6 +31,20 @@ sizeInference = {
 
 # ========================================================================================
 def inferBitsType(size: int) -> str:
+    """
+    Given a size, this function returns the C++ data type that is the largest
+    unsigned integer that can hold that size.
+
+    Parameters
+    ----------
+    size : int
+        The size of the bit field
+
+    Returns
+    -------
+    str
+        The C++ data type that can hold the specified size
+    """
     # Look at the size and extract the next largest one to contain it
     if size <= 8:
         inferredType = "uint8_t"
@@ -48,21 +62,22 @@ def inferBitsType(size: int) -> str:
 
 
 # ========================================================================================
-def parse(desc: dict, verbose: bool=True) -> dict:
-    parsedcomponents = list()
-    parsedpackets = list()
+def parse(desc: dict, verbose: bool=True) -> (dict, dict):
+    parsedcomponents = dict()
+    parsedpackets = dict()
 
-    for component in desc['components']:
+    for component_name, component in desc['components'].items():
+        if verbose:
+            print("=== Parsing component '%s'" % (component_name))
         parsedcomponent, offset = parse_component(component, verbose)
         pprint.pprint(parsedcomponent)
-        parsedcomponents.append(parsedcomponent)
+        parsedcomponents[component_name] = parsedcomponent
 
-    # Extract a list of all the parsed component names
-    component_list = [c['name'] for c in parsedcomponents]
-    for packet in desc['packets']:
-        parsedpacket = parse_packet(packet, component_list, verbose)
-        pprint.pprint(parsedpacket)
-        parsedpackets.append(parsedpacket)
+    # # Extract a list of all the parsed component names
+    # for packet in desc['packets']:
+    #     parsedpacket = parse_packet(packet, parsedcomponents, verbose)
+    #     pprint.pprint(parsedpacket)
+    #     parsedpackets.append(parsedpacket)
 
     return parsedcomponents, parsedpackets
 
@@ -81,12 +96,12 @@ def parse_component(component: dict, verbose: bool=True) -> dict:
     if parsed.get('numBytes') is None:
         parsed['numBytes'] = totalNumBytes
         if verbose:
-            print("component '%s': Total number of bytes inferred to be %d" % (parsed['name'], parsed['numBytes']))
+            print("Total number of bytes inferred to be %d" % (parsed['numBytes']))
     else:
         if parsed['numBytes'] != totalNumBytes:
             raise ValueError(
-                "component '%s': Number of bytes specified (%d) does not match inferred (%d)" % (
-                parsed['name'], parsed['numBytes'], totalNumBytes)
+                "Number of bytes specified (%d) does not match inferred (%d)" % (
+                parsed['numBytes'], totalNumBytes)
             )
         
     # Check for valid sets of values
