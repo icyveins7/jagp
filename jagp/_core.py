@@ -22,15 +22,18 @@ if __name__ == "__main__":
     with open(args.input_file, "r") as fid:
         desc = load(fid, Loader=Loader)
 
-    parsedcomponents, parsedpackets = parse(desc, args.verbose)
+    print(desc)
 
-    # Generate templates
-    Component_globals = {
-        'use_get_prefix': False,
-        'hasToCString': True,
-        'hasToStdString': True,
-        'enclose_components_in_namespace': True
-    }
+    # parsedcomponents, parsedpackets = parse(desc, args.verbose)
+
+    # # Generate templates
+    # Component_globals = {
+    #     'use_get_prefix': False,
+    #     'hasToCString': True,
+    #     'hasToStdString': True,
+    #     'enclose_components_in_namespace': True
+    # }
+
     # component_template = environment.get_template("Component.h.jinja2")
     # txt = component_template.render(
     #     Component_globals=Component_globals
@@ -41,15 +44,15 @@ if __name__ == "__main__":
     # ) as fid:
     #     fid.write(txt)
     
-    specComponent_template = environment.get_template("SpecificComponent.h.jinja2")
-    for component in parsedcomponents:
-        txt = specComponent_template.render(
-            component=component,
-            Component_globals=Component_globals
-        )
-        filepath = os.path.join(
-            os.path.dirname(__file__), "..",
-            "build", "%s.h" % (component['name'])) 
-        with open(filepath, "w") as fid:
-            print("Writing to %s" % (filepath))
-            fid.write(txt)
+    # specComponent_template = environment.get_template("SpecificComponent.h.jinja2")
+    # for component in parsedcomponents:
+    #     txt = specComponent_template.render(
+    #         component=component,
+    #         Component_globals=Component_globals
+    #     )
+    #     filepath = os.path.join(
+    #         os.path.dirname(__file__), "..",
+    #         "build", "%s.h" % (component['name'])) 
+    #     with open(filepath, "w") as fid:
+    #         print("Writing to %s" % (filepath))
+    #         fid.write(txt)
