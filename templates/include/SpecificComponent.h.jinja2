@@ -117,8 +117,11 @@ public:
     /// @param buflen Size of the (remaining) buffer in bytes.
     void read(const uint8_t *buf, size_t buflen)
     {
+        // Define a pointer to the buffer (this helps when there are dynamic size fields)
+        size_t i = 0;
+
         // Check if the buffer is large enough to read the component
-        if (buflen < m_numBytes)
+        if (buflen < size())
             throw std::out_of_range("{{ name }}: Buffer is too small");
 
         // Read each field
@@ -135,7 +138,12 @@ public:
             BYTE-ALIGNED & BYTE-MULTIPLE
             Just a direct memcpy will work as this is the simplest case.
         #}
-        std::memcpy(&m_{{ field.name }}, &buf[{{ field.byte_offset }}], sizeof({{ field.type }}));
+        {% if field.repeats is defined %}
+        // TODO: Implement reader for dynamically sized vector fields
+        {% else %}
+        std::memcpy(&m_{{ field.name }}, &buf[i], sizeof({{ field.type }}));
+        i += sizeof({{field.type}});
+        {% endif %}
         {% else %}
         {#
             For all other cases, we use the sections iterable provided in the field to help us.
@@ -149,12 +157,19 @@ public:
         {% for bitEnd in field.sections %}
         {% if loop.index0 == 0 %}
         {# The first loop must take the bit_offset into consideration #}
-        m_{{field.name}} |= ( buf[{{field.byte_offset}}] & {{contiguousBitmask(8, field.bit_offset, field.bit_offset+bitEnd)}} ){{lrshift(-field.size+8-field.bit_offset)}}; // Section 1
+        m_{{field.name}} |= ( buf[i] & {{contiguousBitmask(8, field.bit_offset, field.bit_offset+bitEnd)}} ){{lrshift(-field.size+8-field.bit_offset)}}; // Section 1
+        {% if loop.length > 1 %}
+        i += 1;
+        {% else %}
+        // No change to byte pointer
+        {% endif %}
         {% else %}
         {% if bitEnd - field.sections[loop.index0-1] == 8 %}
-        m_{{field.name}} |= buf[{{field.byte_offset + loop.index0}}]{{lrshift(-field.size+8+field.sections[loop.index0-1])}}; // Section {{loop.index}}
+        m_{{field.name}} |= buf[i]{{lrshift(-field.size+8+field.sections[loop.index0-1])}}; // Section {{loop.index}}
+        i += 1;
         {% else %}
-        m_{{field.name}} |= ( buf[{{field.byte_offset + loop.index0}}] & {{contiguousBitmask(8, 0, bitEnd-field.sections[loop.index0-1])}} ){{lrshift(8-bitEnd+field.sections[loop.index0-1])}}; // Section {{loop.index}}
+        m_{{field.name}} |= ( buf[i] & {{contiguousBitmask(8, 0, bitEnd-field.sections[loop.index0-1])}} ){{lrshift(8-bitEnd+field.sections[loop.index0-1])}}; // Section {{loop.index}}
+        // No change to byte pointer
         {% endif %}
         {% endif %}
         {% endfor %}
