@@ -6,6 +6,9 @@
 #include <string>
 #include <stdint.h>
 #include <stdexcept>
+{% if component.requires_vector %}
+#include <vector>
+{% endif %}
 
 {% if Component_globals.enclose_components_in_namespace %}
 namespace Component{
@@ -45,8 +48,11 @@ public:
     /// @param buflen Size of the (remaining) buffer in bytes.
     void write(uint8_t *buf, size_t buflen)
     {
+        // Define a pointer to the buffer (this helps when there are dynamic size fields)
+        size_t i = 0;
+
         // Check if the buffer is large enough to write the component
-        if (buflen < m_numBytes)
+        if (buflen < size())
             throw std::out_of_range("{{ name }}: Buffer is too small");
 
         // Write each field
@@ -63,7 +69,13 @@ public:
             BYTE-ALIGNED & BYTE-MULTIPLE
             Just a direct memcpy will work as this is the simplest case.
         #}
-        std::memcpy(&buf[{{ field.byte_offset }}], &m_{{ field.name }}, sizeof({{ field.type }}));
+        {% if field.repeats is defined %}
+        std::memcpy(&buf[i], m_{{field.name}}.data(), m_{{field.name}}.size()*sizeof({{field.type}}));
+        i += m_{{field.name}}.size() * sizeof({{field.type}});
+        {% else %}
+        std::memcpy(&buf[i], &m_{{ field.name }}, sizeof({{ field.type }}));
+        i += sizeof({{ field.type }});
+        {% endif %}
         {% else %}
         {#
             For all other cases, we use the sections iterable provided in the field to help us.
@@ -72,18 +84,28 @@ public:
         {% for bitEnd in field.sections %}
         {% if loop.index0 == 0 %}
         {# The first loop must take the bit_offset into consideration #}
-        buf[{{field.byte_offset}}] |= ( m_{{field.name}} & {{contiguousBitmask(field.size, 0, bitEnd)}} ){{lrshift(field.size-8+field.bit_offset)}}; // Section 1
+        buf[i] |= ( m_{{field.name}} & {{contiguousBitmask(field.size, 0, bitEnd)}} ){{lrshift(field.size-8+field.bit_offset)}}; // Section 1
+        {% if loop.length > 1 %}
+        i += 1;
+        {% else %}
+        // No change to byte pointer
+        {% endif %}
         {% else %}
         {% if bitEnd - field.sections[loop.index0-1] == 8 %}
-        buf[{{field.byte_offset + loop.index0}}] = ( m_{{field.name}} & {{contiguousBitmask(field.size, bitEnd-8, bitEnd)}} ){{lrshift(field.size-bitEnd)}}; // Section {{loop.index}}
+        buf[i] = ( m_{{field.name}} & {{contiguousBitmask(field.size, bitEnd-8, bitEnd)}} ){{lrshift(field.size-bitEnd)}}; // Section {{loop.index}}
+        i += 1;
         {% else %}
-        buf[{{field.byte_offset + loop.index0}}] |= ( m_{{field.name}} & {{contiguousBitmask(field.size, field.sections[loop.index0-1], bitEnd)}} ){{lrshift(-8+bitEnd-field.sections[loop.index0-1])}}; // Section {{loop.index}}
+        buf[i] |= ( m_{{field.name}} & {{contiguousBitmask(field.size, field.sections[loop.index0-1], bitEnd)}} ){{lrshift(-8+bitEnd-field.sections[loop.index0-1])}}; // Section {{loop.index}}
+        // No change to byte pointer
         {% endif %}
         {% endif %}
         {% endfor %}
         {% endif %}
         // --------------------
         {% endfor %}
+
+        if (i != size())
+            throw std::runtime_error("Parse incorrect for {{name}}::write; unequal pointer shift and expected size");
 
         // Change the pointer to remaining part of the buffer
         buf += size();

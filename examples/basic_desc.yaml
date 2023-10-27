@@ -44,10 +44,11 @@ components: {
         FieldKCount u8,
         {
           name: FieldK,
-          type: bits,
+          type: uint16_t,
           size: 16,
           repeats: FieldKCount      
-        }
+        },
+        FieldL u8
       ]
   }
 }

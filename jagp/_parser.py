@@ -126,9 +126,12 @@ def parse_component(component: dict, verbose: bool=True) -> dict:
     parsed = component
     # Iterate over the fields
     offset = 0 # Accumulated offset in bits
+    requires_vector = False
     for i, field in enumerate(parsed['fields']):
         offset, parsed_field = parse_field(offset, field, verbose)
         parsed['fields'][i] = parsed_field # Overwrite the field
+        if parsed_field.get('repeats') is not None:
+            requires_vector = True
 
     # For now, offset must end at the byte
     if offset % 8 != 0:
@@ -153,6 +156,9 @@ def parse_component(component: dict, verbose: bool=True) -> dict:
     if parsed.get('valid') is not None:
         # TODO
         pass
+
+    # Set field to indicate if dynamic
+    parsed['requires_vector'] = requires_vector
 
     return parsed
 
@@ -262,27 +268,27 @@ def parse_field(offset: int, field: str|dict, verbose: bool=True) -> dict:
         raise TypeError("Field must be just a string or a dict")
     
     # Check if the field is repeatable
-    if field.get('repeatable') is not None:
+    if field.get('repeats') is not None:
         # TODO: for now we assume it must be aligned and byte-multiple
         if field['bit_offset'] != 0 or field['size'] % 8 != 0:
             raise NotImplementedError("Repeated fields must be byte-aligned and byte-multiple for now; may change in future")
 
+    else:
+        # At the end, mutate the field dict to check whether it has to be split across multiple bytes;
+        # This helps the template in bit offset calculations (instead of doing messy math in the template itself)
+        field['sections'] = list()
+        remBits = field['size']
+        # Handle initial offset
+        if field['bit_offset'] != 0:
+            field['sections'].append(min(8 - field['bit_offset'], field['size']))
+            remBits -= field['sections'][0]
+        while remBits > 0:
+            nextCopy = min(8, remBits)
+            field['sections'].append(nextCopy)
+            remBits -= nextCopy
 
-    # At the end, mutate the field dict to check whether it has to be split across multiple bytes;
-    # This helps the template in bit offset calculations (instead of doing messy math in the template itself)
-    field['sections'] = list()
-    remBits = field['size']
-    # Handle initial offset
-    if field['bit_offset'] != 0:
-        field['sections'].append(min(8 - field['bit_offset'], field['size']))
-        remBits -= field['sections'][0]
-    while remBits > 0:
-        nextCopy = min(8, remBits)
-        field['sections'].append(nextCopy)
-        remBits -= nextCopy
-
-    # Slower to accumulate after, but easier to read
-    field['sections'] = list(itertools.accumulate(field['sections']))
+        # Slower to accumulate after, but easier to read
+        field['sections'] = list(itertools.accumulate(field['sections']))
     
     return offset, field
     
