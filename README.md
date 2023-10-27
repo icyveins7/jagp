@@ -40,7 +40,19 @@ packets: {
 
 ## Component
 
-Within the component, the bare minimum is to define a ```fields``` key which points to a list (or sequence). Within the list, each item is either a simple string (the recommended way) or a dictionary. The string definition helps you to infer the C++ type container, especially in the case of bit-sized fields.
+Within the component, the bare minimum is to define a ```fields``` key which points to a list (or sequence). Within the list, each item is either 
+1. 2-part delimited simple string, delimited by a space (the recommended way). This method lets the parser infer the smallest C++ type container possible that will hold the field, especially for bit-sized fields. The first part will be the name of the field, and the second part is a shortened version representing the type of the field.
+2. A dictionary. This must minimally define a 'name' and either a 'size' or a 'type' key.
+
+### Shortened types
+
+1. u(n) ~ ```uint(n)_t```, e.g. u8 ~ ```uint8_t```, u16 ~ ```uint16_t```
+2. s(n) ~ ```int(n)_t```, e.g. s8 ~ ```int8_t```, s16 ~ ```int16_t```
+3. f(n) ~ ```float``` or ```double``` for n=32 or 64
+4. b(n) ~ bit-sized field. The type will be the smallest possible ```uint(n)_t``` that will hold the field.
+5. Everything else is assumed to be a defined __Component__, and will be checked if it exists.
+
+### Example
 
 ```yaml
 ComponentA: {
@@ -51,7 +63,7 @@ ComponentA: {
         FieldD b10, # 4th field inferred as uint16, but with only 10 bits
         {
             name: FieldE, # We can also define a dictionary instead of a string
-            type: float # Then we must specify the type
+            type: float # Then we must specify the C++ type
         },
         {
             name: FieldF,
@@ -63,6 +75,56 @@ ComponentA: {
 }
 ```
 
+### Repeated Fields
+
+If a field can be repeated, it must use the dictionary definition:
+
+```yaml
+ComponentB: {
+    fields: [
+        FieldSLength u8,
+        {
+            name: FieldR,
+            type: uint8_t,
+            repeats: 3 # Exactly 3 repeats
+        },
+        {
+            name: FieldS,
+            type: uint16_t,
+            repeats: FieldSLength / 2 # Dynamic size, number of repeats is defined by a formula based on previous field
+        }
+    ]
+    # numBytes is dynamic; if defined it must be the same as the fixed field sizes (FieldSCount + FieldR x 3 = 4 bytes)
+}
+```
+
+### Components in Components
+
+As mentioned, you can use a __Component__ as a field in another __Component__. This is useful when a whole section may be repeated; in such cases one must define the repeated section as a separate __Component__ and then use that as the type.
+
+```yaml
+ComponentA: {
+    ...
+},
+
+ComponentB: {
+    ...
+},
+
+ComponentC: {
+    fields: [
+        FieldX u8,
+        CommonA ComponentA, # Single use of a defined component (maybe this is a commonly formatted field throughout the protocol)
+        { # We want to repeat this so use dictionary definition
+            name: RepeatedB,
+            type: ComponentB,
+            repeats: FieldX # Repeats the ComponentB x length defined in FieldX
+        }
+    ]
+}
+```
+
+### Constraints
 For now, the only constraint to the __Component__ is that it must define a group of fields that begins and ends on a byte boundary (not allowed to start at some bit offset), since writing/reading begins from a ```uint8_t``` pointer.
 
 ## Packets
@@ -74,9 +136,9 @@ In the YAML definition, it looks like:
 ```yaml
 PacketABC: {
     components: [
-        ComponentA,
-        ComponentB,
-        ComponentC
+        header HeaderA,
+        payload ContentB,
+        checksum CRC
     ]
 }
 ```

@@ -33,9 +33,9 @@ components: {
     
   ContentB: {
       fields: [
-        FieldH b20,
+        FieldH b23,
         FieldI b2,
-        FieldJ b20
+        FieldJ b23
       ]
   },
   

@@ -26,10 +26,15 @@ public:
     }
 
     {% for field in component.fields %}
+    {% if field.repeats is defined %}
+    /// @brief Gets a reference to the {{loop.index}}/{{loop.length}} field vector: {{field.name}}
+    inline std::vector<{{ field.type }}>& {% if Component_globals.use_get_prefix %}get_{% endif %}{{ field.name }}(){ return m_{{ field.name }}; }
+    {% else %}
     /// @brief Gets the {{loop.index}}/{{loop.length}} field: {{field.name}}
-    {{ field.type }} {% if Component_globals.use_get_prefix %}get_{% endif %}{{ field.name }}(){ return m_{{ field.name }}; }
+    inline {{ field.type }} {% if Component_globals.use_get_prefix %}get_{% endif %}{{ field.name }}(){ return m_{{ field.name }}; }
     /// @brief Sets the {{loop.index}}/{{loop.length}} field: {{field.name}}
-    void set_{{ field.name }}({{ field.type }} value){ m_{{ field.name }} = value; }
+    inline void set_{{ field.name }}({{ field.type }} value){ m_{{ field.name }} = value; }
+    {% endif %}
     {# leave a space between fields for readability#}
 
     {% endfor %}
@@ -75,7 +80,7 @@ public:
         buf[{{field.byte_offset + loop.index0}}] |= ( m_{{field.name}} & {{contiguousBitmask(field.size, field.sections[loop.index0-1], bitEnd)}} ){{lrshift(-8+bitEnd-field.sections[loop.index0-1])}}; // Section {{loop.index}}
         {% endif %}
         {% endif %}
-            {% endfor %}
+        {% endfor %}
         {% endif %}
         // --------------------
         {% endfor %}
