@@ -70,6 +70,9 @@ public:
             Just a direct memcpy will work as this is the simplest case.
         #}
         {% if field.repeats is defined %}
+        // Check before writing that the size is correct
+        if (m_{{field.name}}.size() != {{field.repeats}})
+            throw std::out_of_range("{{name}}.m_{{field.name}} expected size {{field.repeats}} but got " + std::to_string(m_{{field.name}}.size()));
         std::memcpy(&buf[i], m_{{field.name}}.data(), m_{{field.name}}.size()*sizeof({{field.type}}));
         i += m_{{field.name}}.size() * sizeof({{field.type}});
         {% else %}

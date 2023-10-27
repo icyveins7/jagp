@@ -160,6 +160,11 @@ def parse_component(component: dict, verbose: bool=True) -> dict:
     # Set field to indicate if dynamic
     parsed['requires_vector'] = requires_vector
 
+    # Iterate over the parsed fields and evaluate the expressions for repeated ones
+    for i, field in enumerate(parsed['fields']):
+        if field.get('repeats') is not None:
+            # TODO: maybe use regex to prefix any previous field names found in the expression with 'm_'
+
     return parsed
 
 
