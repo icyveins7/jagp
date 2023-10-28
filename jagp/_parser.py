@@ -182,7 +182,10 @@ def parse_field(offset: int, field: str|dict, verbose: bool=True) -> dict:
     # Check if it's the shortcut string
     if isinstance(field, str):
         # Split into the name and the type
-        name, typekey = field.split(" ")
+        splitfield = field.split(" ")
+        name = splitfield[0] 
+        typekey = splitfield[1] # Minimally there must be two parts to the shorthand string
+        # The third part is the optional fixed value
 
         # Extract the size in bits
         size = int(typekey[1:])
@@ -211,6 +214,9 @@ def parse_field(offset: int, field: str|dict, verbose: bool=True) -> dict:
             'byte_offset': byte_offset,
             'bit_offset': bit_offset
         }
+        if len(splitfield) > 2 and splitfield[2][:5] == 'fixed':
+            fixedValue = int(splitfield[2][6:])
+            field['fixed'] = fixedValue
 
         # Increment offset counter
         offset += size

@@ -24,8 +24,7 @@ public:
     }
 
     /// @brief Returns the size (in bytes) of this component when read from/written to a buffer. 
-    /// Should return a dynamic value if there are variable-sized fields.
-    /// Use this to determine how much to move a pointer.
+    /// Should return a dynamic value if there are variable-sized fields, and they have already been set.
     inline size_t size() const {
         return m_numBytes{% for field in component.fields %}{%if field.repeats is defined %} + m_{{field.name}}.size()*sizeof({{field.type}}){% endif %}{% endfor %};
     }
