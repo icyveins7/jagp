@@ -161,9 +161,18 @@ def parse_component(component: dict, verbose: bool=True) -> dict:
     parsed['requires_vector'] = requires_vector
 
     # Iterate over the parsed fields and evaluate the expressions for repeated ones
+    fieldnames = list()
     for i, field in enumerate(parsed['fields']):
         if field.get('repeats') is not None:
-            # TODO: maybe use regex to prefix any previous field names found in the expression with 'm_'
+            # Search all previous fieldnames
+            for prevname in fieldnames:
+                if prevname in field.get('repeats'):
+                    # Prefix with 'm_' for the templates
+                    field['repeats'] = field['repeats'].replace(prevname, "m_"+prevname)
+                    if verbose:
+                        print("Prefixing field %s repeats expression m_%s" % (field['name'], prevname))
+        # Append the current field name for next iterations
+        fieldnames.append(field['name'])
 
     return parsed
 
