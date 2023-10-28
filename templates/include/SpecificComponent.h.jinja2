@@ -23,7 +23,9 @@ public:
     {
     }
 
-    /// @brief Returns the size (in bytes) of this component. Should return a dynamic value if there are variable-sized fields
+    /// @brief Returns the size (in bytes) of this component when read from/written to a buffer. 
+    /// Should return a dynamic value if there are variable-sized fields.
+    /// Use this to determine how much to move a pointer.
     inline size_t size() const {
         return m_numBytes{% for field in component.fields %}{%if field.repeats is defined %} + m_{{field.name}}.size()*sizeof({{field.type}}){% endif %}{% endfor %};
     }
@@ -125,7 +127,7 @@ public:
 
         // Check if the buffer is large enough to read the component
         if (buflen < size())
-            throw std::out_of_range("{{ name }}: Buffer is too small");
+            throw std::out_of_range("{{ name }}: Buffer is too small for the minimum length " + std::to_string(size()));
 
         // Read each field
         {% for field in component.fields %}
@@ -142,7 +144,11 @@ public:
             Just a direct memcpy will work as this is the simplest case.
         #}
         {% if field.repeats is defined %}
-        // TODO: Implement reader for dynamically sized vector fields
+        // Resize according to the appropriate expression
+        m_{{field.name}}.resize({{field.repeats}});
+        // Memcpy all repeats
+        std::memcpy(m_{{field.name}}.data(), &buf[i], m_{{field.name}}.size()*sizeof({{field.type}}));
+        i += m_{{field.name}}.size() * sizeof({{field.type}});
         {% else %}
         std::memcpy(&m_{{ field.name }}, &buf[i], sizeof({{ field.type }}));
         i += sizeof({{field.type}});

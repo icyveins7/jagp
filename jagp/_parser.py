@@ -140,7 +140,7 @@ def parse_component(component: dict, verbose: bool=True) -> dict:
         )
 
     # Check numBytes and write if it doesn't exist
-    totalNumBytes = offset // 8
+    totalNumBytes = sum([field['size'] for field in parsed['fields'] if field.get('repeats') is None]) // 8
     if parsed.get('numBytes') is None:
         parsed['numBytes'] = totalNumBytes
         if verbose:
