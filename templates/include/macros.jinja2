@@ -7,3 +7,7 @@
 {% macro lrshift(shift) -%}
 {% if shift > 0 %} >> {{ shift }}{% elif shift < 0 %} << {{ -shift }}{% endif %}
 {%- endmacro %}
+
+{% macro addInitializer(fieldname, fieldvalue, prepend_comma) -%}
+{% if prepend_comma %}, {%endif%}m_{{fieldname}}({{fieldvalue}})
+{%- endmacro %}

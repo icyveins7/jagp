@@ -214,9 +214,10 @@ def parse_field(offset: int, field: str|dict, verbose: bool=True) -> dict:
             'byte_offset': byte_offset,
             'bit_offset': bit_offset
         }
+        # Add the fixed field to the dictionary if it exists
         if len(splitfield) > 2 and splitfield[2][:5] == 'fixed':
-            fixedValue = int(splitfield[2][6:])
-            field['fixed'] = fixedValue
+            fixedValue = splitfield[2][6:]
+            field['fixed'] = fixedValue # We leave it as a string
 
         # Increment offset counter
         offset += size
