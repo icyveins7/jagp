@@ -19,9 +19,9 @@ namespace Component{
 class {{ name }}
 {
 public:
-    /// @brief Empty constructor. This initializes the internal size to the size of all fixed-size fields.
+    /// @brief Empty constructor. This initializes the internal size to the size of all static-size fields.
     {{ name }}()
-        : m_numBytes({{component.numBytes}}) // This is the size of the fixed field bytes
+        : m_numBytes({{component.numBytes}}) // This is the size of the static-size field bytes
         {% for field in component.fields %}
         {% if field.fixed is defined %}
         {{addInitializer(field.name, field.fixed, True)}}
@@ -219,7 +219,7 @@ public:
     {% endif %}
 
 private:
-    /// @brief Sum of the sizes of all fixed-size fields.
+    /// @brief Sum of the sizes of all static-size fields.
     size_t m_numBytes = 0;
 
     // === Member fields ===
