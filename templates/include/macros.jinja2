@@ -8,10 +8,12 @@
 {% if shift > 0 %} >> {{ shift }}{% elif shift < 0 %} << {{ -shift }}{% endif %}
 {%- endmacro %}
 
+{# Adds a single initializer to the initializer list #}
 {% macro addInitializer(fieldname, fieldvalue, prepend_comma) -%}
 {% if prepend_comma %}, {%endif%}m_{{fieldname}}({{fieldvalue}})
 {%- endmacro %}
 
+{# Used to prepend const keyword to member variable declarations #}
 {% macro prependConstIfFixed(field) -%}
 {% if field.fixed is defined %}const {% endif %}
 {%- endmacro %}

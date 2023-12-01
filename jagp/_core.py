@@ -33,7 +33,19 @@ if __name__ == "__main__":
         'use_get_prefix': False,
         'hasToCString': True,
         'hasToStdString': True,
-        'enclose_components_in_namespace': True
+        'enclose_components_in_namespace': True,
+        'fieldFmts': {
+            'uint8_t': "%hhu",
+            'uint16_t': "%hu",
+            'uint32_t': "%u",
+            'uint64_t': "%llu",
+            'int8_t': "%hhd",
+            'int16_t': "%hd",
+            'int32_t': "%ld",
+            'int64_t': "%lld",
+            'float': "%f",
+            'double': "%f"
+        }
     }
     
     specComponent_template = environment.get_template("SpecificComponent.h.jinja2")

@@ -139,6 +139,7 @@ public:
 
         // Read each field
         {% for field in component.fields %}
+        {% if field.fixed is not defined %}
         {# 
             Handle the matrix of combinations:
             1) Byte-aligned offsets
@@ -191,6 +192,7 @@ public:
         {% endif %}
         {% endfor %}
         {% endif %}
+        {% endif %}{# end condition for fixed variables #}
         // --------------------
         {% endfor %}
 
@@ -201,10 +203,18 @@ public:
     {% if Component_globals.hasToCString %}
     void toCString(char* s, size_t len)
     {
-        std::snprintf(s, len,
+        int count = std::snprintf(s, len,
             "{{name}}\n"
+            {% for field in component.fields %}
+            "{{field.name}}: {{Component_globals.fieldFmts[field.type]}}\n"
+            {% endfor %}
+            {% for field in component.fields %}
+            , m_{{field.name}}
+            {% endfor %}
         );
-        // TODO: complete with fields?
+        if (count < len + 1)
+            throw std::out_of_range("{{name}}::toCString insufficient buffer length!");
+        // TODO: add support for field-specific formats
     }
     {% endif %}
     {% if Component_globals.hasToStdString %}
