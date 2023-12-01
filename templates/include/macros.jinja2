@@ -11,3 +11,8 @@
 {% macro addInitializer(fieldname, fieldvalue, prepend_comma) -%}
 {% if prepend_comma %}, {%endif%}m_{{fieldname}}({{fieldvalue}})
 {%- endmacro %}
+
+{% macro prependConstIfFixed(field) -%}
+{% if field.fixed is defined %}const {% endif %}
+{%- endmacro %}
+
