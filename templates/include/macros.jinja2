@@ -18,3 +18,34 @@
 {% if field.fixed is defined %}const {% endif %}
 {%- endmacro %}
 
+
+{% macro getIndexedSketchSymbol(index, orderedSymbolList) -%}
+{{orderedSymbolList[index]}}
+{%- endmacro %}
+
+{# Used to sketch a block of comments showing the layout of bits to fields before class declaration #}
+{% macro sketchFields(component, orderedSymbolList) -%}
+{% set ns = namespace(fieldIdx=0) %}
+/*
+Layout
+|7|6|5|4|3|2|1|0|
+-----------------
+{% for byte in range(component.numBytes) %}
+|{% for bit in range(8) -%}
+{% set i = byte * 8 + bit %}
+{% set start = component.fields[ns.fieldIdx].byte_offset * 8 + component.fields[ns.fieldIdx].bit_offset %}
+{% set end = start + component.fields[ns.fieldIdx].size %}
+{% if i >= start and i < end -%}{# Then print a symbol #}
+{{getIndexedSketchSymbol(ns.fieldIdx, orderedSymbolList)}}
+{%- endif -%}
+|
+{%- if i == end-1 -%}{# Move to next field after printing the last one#}
+{% set ns.fieldIdx = ns.fieldIdx + 1%}
+{%- endif -%}
+{%- endfor %}{# End bit loop #}
+
+{% endfor %}{# End byte loop #}
+*/
+
+{%- endmacro %}
+

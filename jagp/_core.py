@@ -45,7 +45,14 @@ if __name__ == "__main__":
             'int64_t': "%lld",
             'float': "%f",
             'double': "%f"
-        }
+        },
+        'sketchSymbols': [
+            'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H',
+            'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
+            'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X',
+            'Y', 'Z', 
+            '!', '@', '#', '$', '%', '^', '&', '*'
+        ] # Enough for now i think
     }
     
     specComponent_template = environment.get_template("SpecificComponent.h.jinja2")
